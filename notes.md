@@ -2,14 +2,19 @@
 
 This file represents what I have learned about web programming.
 
+"I love web programming"
+
 - [My startup](https://startup.cs260.click)
 - [My simon](https://simon.cs260.click)
+- [My Github](https://github.com/zoeylater/startup)
 
 ## Helpful links
 
 - [Course instruction](https://github.com/webprogramming260)
 - [Canvas](https://byu.instructure.com)
 - [MDN](https://developer.mozilla.org)
+
+https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax SYNTAX FOR WRITING IN MARKDOWN!!!!!!!!
 
 ## AWS
 
