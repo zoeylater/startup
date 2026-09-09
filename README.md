@@ -24,7 +24,10 @@ Have you ever had a conversation with your friends and wondered who has better k
 ![Design image](page2.png)
 ![Design image](page3.png)
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Here are three photos that show the user interface.
+    1. Start up page, insert username and password
+    2. Press the play button to hear a quick snippet of the song, then choose your guess on the map
+    3. After you submit, you will be brought to a page that tells you more information; Location, Artist, Song title, and your score.
 
 ```mermaid
 sequenceDiagram
