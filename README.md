@@ -3,12 +3,8 @@
 [My Notes](notes.md)
 (Dont forget to ctrl s) ((save))
 
-This application, **TuneCatcher** will combine guessing elements from the game "GeoGeussr" with music trivia. Every day you will be given a short snippet of a song. Then, you have to guess where in the world it's from. This could range from Kenya, Romania, the USA, there are many possibilites. The closer you are to the correct country and city, the more points you get. 
+This application, **TuneCatcher**, will combine guessing elements from the game "GeoGuessr" with music trivia. Every day, you will be given a short snippet of a song. Then, you have to guess where in the world it's from — this could range from Kenya, to Romania, to the USA, with many possibilities in between. The closer you are to the correct country and city, the more points you get. After you have made your guess, you can see how your results compare to other players. 
 
-After you have made your guess, you can see how your results compare to other players. 
-
-
-My application will be a combination of the well known website "GeoGeussr" and a music trivia. Everyday you will have the opportunity to guess where a song is from. It could be from China, Romania, USA, but the closer you are to the exact place, the more points you get. You will be able to share your results with your friends afterwards as well. 
 
 It will use react because of the score and that updates when the guess is completed. For WebSockets that will keep track of the daily leaderboard. Whoever got the highest score will be displayed. For MongoDB this will be used as a database to store the proper information. Lastly for authentication it will save someones username and password safely. 
 
@@ -20,7 +16,7 @@ It will use react because of the score and that updates when the guess is comple
 
 ### Elevator pitch
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Have you ever had a conversation with your friends and wondered who has better knowledge of music? TuneCatcher combines your music taste with your geography expertise. You can play it solo or turn it into a competition against your friends. Along the way, you are likely to learn some new geography and discover new music. 
 
 ### Design
 
