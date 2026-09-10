@@ -69,12 +69,21 @@ sequenceDiagram
 
 I am going to use the required technologies in the following ways:
 
-- **HTML** - Description here
-- **CSS** - Description here
-- **React** - Description here
-- **Service** - Description here
-- **DB/Login** - Description here
-- **WebSocket** - Description here
+- **HTML** - HTML will be used to create the elements on the screen (buttons, containers, forms). In the case of TuneCatcher that would include the play button, the results page and the map. 
+
+- **CSS** - CSS will be used for my color scheme to make sure that it is cohesive and pleasing too look at. Additionally, this is where I will make sure that the application looks good on different screen sizes.
+
+- **React** - React will be used with my live score display. This will update the user interface instantly without needing to be refreshed. Additionally this will be used for the audio player and the map where you submit a guess. 
+
+- **Service** - There will be backend service with endpoints for
+    - User authentication
+    - Retrieving the daily song
+    - Submitting a guess
+    - Calculating the score based on distance from the actual location of the song
+
+- **DB/Login** - DB/Login will be used to store user accounts, game history, and song data. 
+
+- **WebSocket** - Websocket will help with the live leaderboard. It will instantly push real-time leaderboard updates. 
 
 ## 🚀 Specification Deliverable
 
