@@ -4,9 +4,6 @@
 
 This application, **TuneCatcher**, will combine guessing elements from the game "GeoGuessr" with music trivia. Every day, you will be given a short snippet of a song. Then, you have to guess where in the world it's from — this could range from Kenya, to Romania, to the USA, with many possibilities in between. The closer you are to the correct country and city, the more points you get. After you have made your guess, you can see how your results compare to the daily high scores. 
 
-
-It will use react because of the score and that updates when the guess is completed. For WebSockets that will keep track of the daily leaderboard. Whoever got the highest score will be displayed. For MongoDB this will be used as a database to store the proper information. Lastly for authentication it will save someones username and password safely. 
-
 > [!NOTE]
 > This is a template for your startup application. You must modify this `README.md` file for each phase of your development. You only need to fill in the section for each deliverable when that deliverable is submitted in Canvas. Without completing the section for a deliverable, the TA will not know what to look for when grading your submission. Feel free to add additional information to each deliverable description, but make sure you at least have the list of rubric items and a description of what you did for each item.
 
