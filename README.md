@@ -44,6 +44,9 @@ sequenceDiagram
 
     You->>Website: Submit guess (location on map)
     Website-->>You: Return score, correct location, distance, artist, and song title
+
+    Website->>Database: Save guess and score
+    Database-->>Website: Confirm saved
 ```
 
 ### Key features
