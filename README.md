@@ -69,13 +69,13 @@ sequenceDiagram
 
 I am going to use the required technologies in the following ways:
 
-- **HTML** - HTML will be used to create the elements on the screen (buttons, containers, forms). In the case of TuneCatcher that would include the play button, the results page and the map. 
+- **HTML** - HTML will be used to create the elements on the screen (buttons, containers, forms). In the case of TuneCatcher that would include the play button, the results page and the container for the map. 
 
 - **CSS** - CSS will be used for my color scheme to make sure that it is cohesive and pleasing too look at. Additionally, this is where I will make sure that the application looks good on different screen sizes.
 
-- **React** - React will be used with my live score display. This will update the user interface instantly without needing to be refreshed. Additionally this will be used for the audio player and the map where you submit a guess. 
+- **React** - React will be used with my live score display. This will update the user interface instantly without needing to be refreshed. Also, this will be used for the audio player and the map where you submit a guess. 
 
-- **Service** - There will be backend service with endpoints for
+- **Service** - There will be backend service with endpoints for:
     - User authentication
     - Retrieving the daily song
     - Submitting a guess
@@ -84,6 +84,10 @@ I am going to use the required technologies in the following ways:
 - **DB/Login** - DB/Login will be used to store user accounts, game history, and song data. 
 
 - **WebSocket** - Websocket will help with the live leaderboard. It will instantly push real-time leaderboard updates. 
+
+- **3rd party API** - There will be multiple used for this application.
+    - Leaflet.js - this will be for the map. (its free, unless I change my mind and use Google Maps JavaScript API)
+    - Deezery API - this is free and allows for 30-second audio previews.
 
 ## 🚀 Specification Deliverable
 
