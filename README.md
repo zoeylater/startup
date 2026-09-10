@@ -4,7 +4,7 @@ This application, **TuneCatcher**, will combine guessing elements from the game 
 
 ### Elevator pitch
 
-Have you ever had a conversation with your friends and wondered who has better knowledge of music? TuneCatcher combines your music taste with your geography expertise. You can play it solo or turn it into a competition against others. Along the way, you are likely to learn some new geography and discover new music. 
+Have you ever had a conversation with your friends and wondered who has a better knowledge of music? TuneCatcher combines your music taste with your geography expertise. You can play it solo or try and beat the top 3 daily highscores. Along the way, you are likely to learn some new geography and discover new music. 
 
 ### Design
 
