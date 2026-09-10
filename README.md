@@ -35,6 +35,7 @@ Here are three photos that show the user interface.
 sequenceDiagram
     actor You
     participant Website
+    participant Database
 
     You->>Website: Log in with your username and password
     Website-->>You: Confirm login, show today's challenge
