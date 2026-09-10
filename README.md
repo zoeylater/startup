@@ -36,8 +36,8 @@ sequenceDiagram
     actor You
     participant Website
 
-    You->>Website: Replace this with your design
-    Website->>You: Confirm login, show today's challenge
+    You->>Website: Log in with your username and password
+    Website-->>You: Confirm login, show today's challenge
 
     You->>Website: Press the play button
     Website-->>You: Send audio clip of the song
