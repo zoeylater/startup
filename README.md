@@ -1,7 +1,6 @@
 # TuneCatcher
 
 [My Notes](notes.md)
-(Dont forget to ctrl s) ((save))
 
 This application, **TuneCatcher**, will combine guessing elements from the game "GeoGuessr" with music trivia. Every day, you will be given a short snippet of a song. Then, you have to guess where in the world it's from — this could range from Kenya, to Romania, to the USA, with many possibilities in between. The closer you are to the correct country and city, the more points you get. After you have made your guess, you can see how your results compare to other players. 
 
@@ -28,15 +27,23 @@ Have you ever had a conversation with your friends and wondered who has better k
 
 Here are three photos that show the user interface.
 
-1. Start up page, insert username and password
+1. Start up page: insert username and password
 2. Press the play button to hear a quick snippet of the song, then choose your guess on the map
-3. After you submit, you will be brought to a page that tells you more information; Location, Artist, Song title, and your score.
+3. After you submit, you will be brought to a page that tells you more information. This includes the origin of the song, how far away you were from that location, as well as the artist, song title, and your score.
 
 ```mermaid
 sequenceDiagram
     actor You
-    actor Website
+    participant Website
+
     You->>Website: Replace this with your design
+    Website->>You: Confirm login, show today's challenge
+
+    You->>Website: Press the play button
+    Website-->>You: Send audio clip of the song
+
+    You->>Website: Submit guess (location on map)
+    Website-->>YouL Return score, correct location, distance, artist, and song title
 ```
 
 ### Key features
