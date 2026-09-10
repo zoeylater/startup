@@ -21,13 +21,16 @@ Have you ever had a conversation with your friends and wondered who has better k
 ### Design
 
 ![Design image](opening.png)
+
 ![Design image](page2.png)
+
 ![Design image](page3.png)
 
 Here are three photos that show the user interface.
-    1. Start up page, insert username and password
-    2. Press the play button to hear a quick snippet of the song, then choose your guess on the map
-    3. After you submit, you will be brought to a page that tells you more information; Location, Artist, Song title, and your score.
+
+1. Start up page, insert username and password
+2. Press the play button to hear a quick snippet of the song, then choose your guess on the map
+3. After you submit, you will be brought to a page that tells you more information; Location, Artist, Song title, and your score.
 
 ```mermaid
 sequenceDiagram
