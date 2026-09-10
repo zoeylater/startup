@@ -25,11 +25,13 @@ Have you ever had a conversation with your friends and wondered who has better k
 
 ![Design image](page3.png)
 
-Here are three photos that show the user interface.
+Above are three photos that show the user interface.
 
 1. Start up page: insert username and password
 2. Press the play button to hear a quick snippet of the song, then choose your guess on the map
 3. After you submit, you will be brought to a page that tells you more information. This includes the origin of the song, how far away you were from that location, as well as the artist, song title, and your score.
+
+Featured below is a sequence diagram that shows how the user would interact with the website and the database that stores the daily high scores. 
 
 ```mermaid
 sequenceDiagram
@@ -75,8 +77,8 @@ I am going to use the required technologies in the following ways.
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Git commit requirement)
-- [ ] Proper use of Markdown
-- [ ] A concise and compelling elevator pitch
+- [x] Proper use of Markdown
+- [x] A concise and compelling elevator pitch
 - [ ] Description of key features
 - [ ] Description of how you will use each technology including your 3rd party API and use of WebSocket
 - [ ] One or more rough sketches of your application. Images must be embedded in this file using Markdown image references.
