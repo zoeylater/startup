@@ -43,7 +43,7 @@ sequenceDiagram
     Website-->>You: Send audio clip of the song
 
     You->>Website: Submit guess (location on map)
-    Website-->>YouL Return score, correct location, distance, artist, and song title
+    Website-->>You Return score, correct location, distance, artist, and song title
 ```
 
 ### Key features
