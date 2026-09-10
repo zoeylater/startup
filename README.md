@@ -73,7 +73,7 @@ I am going to use the required technologies in the following ways:
 
 - **CSS** - CSS will be used for my color scheme to make sure that it is cohesive and pleasing too look at. Additionally, this is where I will make sure that the application looks good on different screen sizes.
 
-- **React** - React will be used with my live score display. This will update the user interface instantly without needing to be refreshed. Also, this will be used for the audio player and the map where you submit a guess. 
+- **React** - React will be used with my live score display. This will update the user interface instantly without needing to be refreshed. Also, this will be used for changing between the login page, gameplay page, and the result page.  
 
 - **Service** - There will be backend service with endpoints for:
     - User authentication
@@ -81,13 +81,13 @@ I am going to use the required technologies in the following ways:
     - Submitting a guess
     - Calculating the score based on distance from the actual location of the song
 
-- **DB/Login** - DB/Login will be used to store user accounts, game history, and song data. 
+- **DB/Login** - DB/Login will be used to store user accounts, game history, and song data. The database data being displayed will come from the daily high score.
 
-- **WebSocket** - Websocket will help with the live leaderboard. It will instantly push real-time leaderboard updates. 
+- **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 
 - **3rd party API** - There will be multiple used for this application.
     - Leaflet.js - this will be for the map. (its free, unless I change my mind and use Google Maps JavaScript API)
-    - Deezery API - this is free and allows for 30-second audio previews.
+    - Deezer API - this is free and allows for 30-second audio previews.
 
 ## 🚀 Specification Deliverable
 
