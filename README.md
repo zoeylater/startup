@@ -15,7 +15,7 @@ It will use react because of the score and that updates when the guess is comple
 
 ### Elevator pitch
 
-Have you ever had a conversation with your friends and wondered who has better knowledge of music? TuneCatcher combines your music taste with your geography expertise. You can play it solo or turn it into a competition against your friends. Along the way, you are likely to learn some new geography and discover new music. 
+Have you ever had a conversation with your friends and wondered who has better knowledge of music? TuneCatcher combines your music taste with your geography expertise. You can play it solo or turn it into a competition against others. Along the way, you are likely to learn some new geography and discover new music. 
 
 ### Design
 
@@ -56,13 +56,18 @@ sequenceDiagram
 
 ### Key features
 
-- Describe your key feature
-- Describe your key feature
-- Describe your key feature
+- Secure login with username and password
+- Daily refresh of a new song
+    - This song then plays on the website
+- Combining geography with music trivia
+    - Guess the song's location by dropping a pin on the map. The closer you are the more points you earn.
+    - This helps you to discover music from diverse countries and cultures
+- Storage of user scores in a database
+- Real-time leaderboard that shows the top 3 daily high scores
 
 ### Technologies
 
-I am going to use the required technologies in the following ways.
+I am going to use the required technologies in the following ways:
 
 - **HTML** - Description here
 - **CSS** - Description here
@@ -81,9 +86,9 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 - [x] I completed the prerequisites for this deliverable (Git commit requirement)
 - [x] Proper use of Markdown
 - [x] A concise and compelling elevator pitch
-- [ ] Description of key features
+- [x] Description of key features
 - [ ] Description of how you will use each technology including your 3rd party API and use of WebSocket
-- [ ] One or more rough sketches of your application. Images must be embedded in this file using Markdown image references.
+- [x] One or more rough sketches of your application. Images must be embedded in this file using Markdown image references.
 
 ## 🚀 AWS deliverable
 
