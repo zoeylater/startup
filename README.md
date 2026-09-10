@@ -31,6 +31,7 @@ Above are three photos that show the user interface.
 2. Press the play button to hear a quick snippet of the song, then choose your guess on the map
 3. After you submit, you will be brought to a page that tells you more information. This includes the origin of the song, how far away you were from that location, as well as the artist, song title, and your score.
 
+
 Featured below is a sequence diagram that shows how the user would interact with the website and the database that stores the daily high scores. 
 
 ```mermaid
