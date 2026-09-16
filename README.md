@@ -93,24 +93,24 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Rented EC2 server** - I did not complete this part of the deliverable.
-- [ ] **Leased domain name** - I did not complete this part of the deliverable.
-- [ ] **Server accessible** from my domain: [https://yourdomainnamehere.click](https://yourdomainnamehere.click) - I did not complete this part of the deliverable.
+- [X] **Rented EC2 server** - I did not complete this part of the deliverable.
+- [X] **Leased domain name** - I did not complete this part of the deliverable.
+- [X] **Server accessible** from my domain: [https://yourdomainnamehere.click](https://yourdomainnamehere.click) - I did not complete this part of the deliverable.
 
 ## 🚀 HTML deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [X] **HTML pages** - I did not complete this part of the deliverable.
-- [X] **Proper HTML element usage** - I did not complete this part of the deliverable.
-- [X] **Links** - I did not complete this part of the deliverable.
-- [ ] **Text** - I did not complete this part of the deliverable.
-- [ ] **3rd party API placeholder** - I did not complete this part of the deliverable.
-- [ ] **Images** - I did not complete this part of the deliverable.
-- [ ] **Login placeholder** - I did not complete this part of the deliverable.
-- [ ] **DB data placeholder** - I did not complete this part of the deliverable.
-- [ ] **WebSocket placeholder** - I did not complete this part of the deliverable.
+- [X] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [X] **HTML pages** - I did complete this part of the deliverable.
+- [X] **Proper HTML element usage** - I did complete this part of the deliverable.
+- [X] **Links** - I did complete this part of the deliverable.
+- [X] **Text** - I did complete this part of the deliverable.
+- [X] **3rd party API placeholder** - I did complete this part of the deliverable.
+- [X] **Images** - I did complete this part of the deliverable.
+- [X] **Login placeholder** - I did complete this part of the deliverable.
+- [X] **DB data placeholder** - I did complete this part of the deliverable.
+- [X] **WebSocket placeholder** - I did complete this part of the deliverable.
 
 ## 🚀 CSS deliverable
 
