@@ -93,8 +93,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [X] **Rented EC2 server** - I did not complete this part of the deliverable.
-- [X] **Leased domain name** - I did not complete this part of the deliverable.
+- [X] **Rented EC2 server** - I did complete this part of the deliverable.
+- [X] **Leased domain name** - I did complete this part of the deliverable.
 - [X] **Server accessible** from my domain: https://startup.tunecatcher.org/index.html - I did complete this part of the deliverable.
 
 ## 🚀 HTML deliverable
