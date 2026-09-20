@@ -45,28 +45,32 @@
     <section>
       <h3>Database Data</h3>
       <table>
-        <tr>
-          <th>Player</th>
-          <th>Daily Score</th>
-        </tr>
-        <tr>
-          <td>Jules</td>
-          <td>980</td>
-        </tr>
-        <tr>
-          <td>Aria</td>
-          <td>950</td>
-        </tr>
-        <tr>
-          <td>Maya</td>
-          <td>920</td>
-        </tr>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Daily Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Jules</td>
+            <td>980</td>
+          </tr>
+          <tr>
+            <td>Aria</td>
+            <td>950</td>
+          </tr>
+          <tr>
+            <td>Maya</td>
+            <td>920</td>
+          </tr>
+        </tbody>
       </table>
     </section>
 
     <section>
       <h3>WebSocket Data</h3>
-      <ul>
+      <ul id="websocket-data">
         <li>New daily high score set by Jules</li>
         <li>Player Maya submitted a guess</li>
         <li>Leaderboard refreshed 5 seconds ago</li>
