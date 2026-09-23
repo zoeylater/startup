@@ -42,3 +42,5 @@ Interesting things I have learned about React
 
 > [!NOTE]
 > Fill in this sections as the submission artifact for this deliverable. You can refer to this [example](https://github.com/webprogramming260/startup-example/blob/main/README.md) for inspiration.
+
+w3.schools.com for a whole bunch of CSS, HTML help
