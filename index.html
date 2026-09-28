@@ -34,70 +34,80 @@
       <p>Play solo or compete with the top daily high scores.</p>
     </section>
 
-    <section class="card">
-      <h3>Application Data</h3>
-      <p>User: Maya</p>
-      <p>Current Song: Daily track snippet</p>
-      <p>Country Guess: Not yet submitted</p>
-      <p>Daily Status: Round is live</p>
-      <p>Quote: "Music and geography are a perfect match."</p>
-    </section>
+    <div class="accordion-wrap">
+      <details class="card accordion-item">
+        <summary>Application Data</summary>
+        <div class="accordion-content">
+          <p>User: Maya</p>
+          <p>Current Song: Daily track snippet</p>
+          <p>Country Guess: Not yet submitted</p>
+          <p>Daily Status: Round is live</p>
+          <p>Quote: "Music and geography are a perfect match."</p>
+        </div>
+      </details>
 
-    <section class="card">
-      <h3>Database Data</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>Daily Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Jules</td>
-            <td>980</td>
-          </tr>
-          <tr>
-            <td>Aria</td>
-            <td>950</td>
-          </tr>
-          <tr>
-            <td>Maya</td>
-            <td>920</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+      <details class="card accordion-item">
+        <summary>Database Data</summary>
+        <div class="accordion-content">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Daily Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Jules</td>
+                <td>980</td>
+              </tr>
+              <tr>
+                <td>Aria</td>
+                <td>950</td>
+              </tr>
+              <tr>
+                <td>Maya</td>
+                <td>920</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
 
-    <section class="card">
-      <h3>WebSocket Data</h3>
-      <ul id="websocket-data">
-        <li>New daily high score set by Jules</li>
-        <li>Player Maya submitted a guess</li>
-        <li>Leaderboard refreshed 5 seconds ago</li>
-      </ul>
-    </section>
+      <details class="card accordion-item">
+        <summary>WebSocket Data</summary>
+        <div class="accordion-content">
+          <ul id="websocket-data">
+            <li>New daily high score set by Jules</li>
+            <li>Player Maya submitted a guess</li>
+            <li>Leaderboard refreshed 5 seconds ago</li>
+          </ul>
+        </div>
+      </details>
 
-    <section class="card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
-      <h3>Why the Layout Works</h3>
-      <p>
-        The <strong>flex</strong> display layout is useful when you want to partition your application into areas that responsively move around as the window resizes or the orientation changes.
-        In order to demonstrate the power of flex we built an application that has a header, footer, and a main content area that is split into two sections, with controls on the left and content on the right.
-      </p>
-      <p>
-        We make the body element into a responsive flexbox by including the CSS <strong>display</strong> property with the value of <strong>flex</strong>. This tells the browser that all of the children of this element are to be displayed in a flex flow.
-        We want our top level flexbox children to be column oriented and so we add the <strong>flex-direction</strong> property with a value of <strong>column</strong>.
-      </p>
-      <ul>
-        <li><strong>header</strong> - <code>flex: 0 80px</code> - Zero means it will not grow and 80px means it has a starting basis height of 80 pixels. This creates a fixed size box.</li>
-        <li><strong>footer</strong> - <code>flex: 0 30px</code> - Like the header it will not grow and has a height of 30 pixels.</li>
-        <li><strong>main</strong> - <code>flex: 1</code> - One means it will get one fractional unit of growth, and since it is the only child with a non-zero growth value, it will get all the remaining space.</li>
-      </ul>
-      <p>
-        To support the narrow screen (portrait mode), we include a media query that detects when we are in portrait orientation and sets the <strong>flex-direction</strong> of the main element to be <strong>column</strong> instead of row.
-        To handle making our header and footer disappear when the screen is too short to display them, we use a media query that triggers when our viewport height has a maximum value of <strong>700 pixels</strong>.
-      </p>
-    </section>
+      <details class="card accordion-item">
+        <summary>Why the Layout Works</summary>
+        <div class="accordion-content">
+          <p>
+            The <strong>flex</strong> display layout is useful when you want to partition your application into areas that responsively move around as the window resizes or the orientation changes.
+            In order to demonstrate the power of flex we built an application that has a header, footer, and a main content area that is split into two sections, with controls on the left and content on the right.
+          </p>
+          <p>
+            We make the body element into a responsive flexbox by including the CSS <strong>display</strong> property with the value of <strong>flex</strong>. This tells the browser that all of the children of this element are to be displayed in a flex flow.
+            We want our top level flexbox children to be column oriented and so we add the <strong>flex-direction</strong> property with a value of <strong>column</strong>.
+          </p>
+          <ul>
+            <li><strong>header</strong> - <code>flex: 0 80px</code> - Zero means it will not grow and 80px means it has a starting basis height of 80 pixels. This creates a fixed size box.</li>
+            <li><strong>footer</strong> - <code>flex: 0 30px</code> - Like the header it will not grow and has a height of 30 pixels.</li>
+            <li><strong>main</strong> - <code>flex: 1</code> - One means it will get one fractional unit of growth, and since it is the only child with a non-zero growth value, it will get all the remaining space.</li>
+          </ul>
+          <p>
+            To support the narrow screen (portrait mode), we include a media query that detects when we are in portrait orientation and sets the <strong>flex-direction</strong> of the main element to be <strong>column</strong> instead of row.
+            To handle making our header and footer disappear when the screen is too short to display them, we use a media query that triggers when our viewport height has a maximum value of <strong>700 pixels</strong>.
+          </p>
+        </div>
+      </details>
+    </div>
   </main>
 
   <footer>
