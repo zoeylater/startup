@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Boldonse&display=swap');
 
 :root {
   --bg-deep: #061521;
@@ -17,6 +18,40 @@
   --radius: 18px;
 }
 
+.boldonse-regular {
+  font-family: "Boldonse", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.lora-regular {
+  font-family: "Lora", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.lora-medium {
+  font-family: "Lora", serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.lora-semibold {
+  font-family: "Lora", serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.lora-bold {
+  font-family: "Lora", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -28,7 +63,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Lora", serif;
+  font-family: "Boldonse", system-ui, sans-serif;
   background:
     radial-gradient(circle at top left, rgba(28, 82, 142, 0.38), transparent 30%),
     radial-gradient(circle at bottom right, rgba(52, 120, 196, 0.18), transparent 30%),
@@ -57,9 +92,8 @@ header {
   background: rgba(5, 17, 29, 0.8);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(12px);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: static;
+  z-index: 1;
 }
 
 header .topbar {
@@ -73,19 +107,32 @@ header .topbar {
 }
 
 .brand {
-  font-family: "Playfair Display", "Lora", serif;
-  font-size: clamp(1.8rem, 2.4vw, 2.5rem);
-  font-weight: 700;
+  font-family: "Boldonse", system-ui, sans-serif;
+  font-size: clamp(2rem, 2.8vw, 3rem);
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #f0f7ff;
+  color: #f2f7ff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.45rem 0.9rem;
+  box-shadow: 0 8px 22px rgba(10, 22, 34, 0.35);
+  display: inline-block;
 }
 
 nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  background: rgba(5, 17, 29, 0.8);
+  backdrop-filter: blur(12px);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
 }
 
 nav a {
@@ -149,6 +196,9 @@ section h3,
 }
 
 .hero-image {
+  position: sticky;
+  top: 110px;
+  align-self: start;
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -232,6 +282,7 @@ input,
 textarea,
 select {
   color: var(--text-main);
+  font-family: "Lora", serif;
 }
 
 .card p,
