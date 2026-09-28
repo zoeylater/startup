@@ -300,6 +300,7 @@ input[type="button"] {
   border-radius: 999px;
   padding: 0.85rem 1.4rem;
   font: inherit;
+  font-size: 1.02rem;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
@@ -316,12 +317,14 @@ input[type="button"]:hover {
 button.primary,
 input[type="submit"] {
   background: linear-gradient(135deg, #3e7eb7 0%, #76bfd9 100%);
-  color: #edf6ff;
+  color: #e5ebf1;
+  font-family: "Lora", serif;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 10px 22px rgba(34, 118, 185, 0.28);
 }
 
 .btn-secondary {
-  background: rgba(245, 248, 252, 0.8);
+  background: rgba(240, 246, 251, 0.86);
   color: var(--navy);
   border: 1px solid rgba(32, 79, 122, 0.12);
 }
@@ -451,11 +454,11 @@ select:focus {
 }
 
 footer {
-  background: rgba(5, 17, 29, 0.9);
-  border-top: 1px solid var(--line);
-  padding: 1.5rem 1rem 2rem;
+  background: linear-gradient(180deg, #ffffff 0%, #edf5fb 100%);
+  border-top: 1px solid rgba(31, 76, 117, 0.12);
+  padding: 1.4rem 1rem 2rem;
   text-align: center;
-  color: var(--text-soft);
+  color: var(--navy);
 }
 
 footer .footer-content {
@@ -464,7 +467,41 @@ footer .footer-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.footer-brand .brand {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(32, 79, 122, 0.12);
+  box-shadow: 0 8px 18px rgba(29, 47, 68, 0.06);
+}
+
+.footer-github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(32, 79, 122, 0.12);
+  color: var(--navy);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.footer-github:hover {
+  background: var(--navy);
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .footer-links {
