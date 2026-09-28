@@ -44,3 +44,31 @@ Interesting things I have learned about React
 > Fill in this sections as the submission artifact for this deliverable. You can refer to this [example](https://github.com/webprogramming260/startup-example/blob/main/README.md) for inspiration.
 
 w3.schools.com for a whole bunch of CSS, HTML help
+
+
+
+
+# CSS HELPS
+     In CSS Grid, the Parent-Child relationship describes how a container (the parent) controls the layout of the elements directly inside it (the children).
+
+Grid Container (Parent): The element where you apply display: grid. It defines the rows, columns, and gaps.
+Grid Items (Children): The direct nested elements. They automatically become "grid items" and follow the parent's rules.
+Parent: .grid-container
+Child: Grid Item 1
+Child: Grid Item 2
+Child: Grid Item 3
+Code Example
+
+<div class="parent"> <!-- The Container -->
+  <div>Child 1</div> <!-- The Item -->
+  <div>Child 2</div> <!-- The Item -->
+</div>
+
+.parent {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Parent defines 2 columns */
+}
+
+.parent > div {
+  border: 1px solid black; /* Styles applied to children */
+}
