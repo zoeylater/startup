@@ -24,33 +24,37 @@
   </header>
 
   <main>
-    <section class="card">
-      <h2>Authentication</h2>
-      <p>Sign in to continue your daily music challenge.</p>
+    <section class="card auth-card">
+      <div class="auth-card-inner">
+        <h2>Authentication</h2>
+        <p>Sign in to continue your daily music challenge.</p>
+      </div>
     </section>
 
-    <section class="card" style="margin-top: 1.5rem;">
-      <form action="index.html" method="post">
-        <div>
-          <label for="username">Username</label>
-          <input id="username" type="text" name="username" />
-        </div>
+    <section class="card auth-form-card" style="margin-top: 1.5rem;">
+      <div class="auth-form-card-inner">
+        <form action="index.html" method="post">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" type="text" name="username" />
+          </div>
 
-        <div>
-          <label for="email">Email</label>
-          <input id="email" type="email" name="email" />
-        </div>
+          <div>
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" />
+          </div>
 
-        <div>
-          <label for="password">Password</label>
-          <input id="password" type="password" name="password" />
-        </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" />
+          </div>
 
-        <div>
-          <input type="submit" value="Create Account" />
-        </div>
-      </form>
-      <p>Logged in as: Maya</p>
+          <div>
+            <input type="submit" value="Create Account" />
+          </div>
+        </form>
+        <p>Logged in as: Maya</p>
+      </div>
     </section>
   </main>
 
