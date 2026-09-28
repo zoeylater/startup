@@ -678,6 +678,22 @@ select {
   text-align: center;
 }
 
+.guess-map-image {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 14px;
+}
+
+@media (max-width: 576px) {
+  .guess-map-image {
+    max-width: 100%;
+    max-height: 260px;
+  }
+}
+
 @media (min-width: 992px) {
   .guess-card p {
     text-align: center;
