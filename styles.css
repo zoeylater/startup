@@ -578,14 +578,17 @@ select {
 .result-stats {
   display: grid;
   gap: 0.8rem;
+  justify-items: center;
 }
 
 .result-metric {
+  width: min(100%, 500px);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 0.8rem 0.9rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  text-align: center;
 }
 
 .result-score-box {
