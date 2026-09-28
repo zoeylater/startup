@@ -23,29 +23,31 @@
   </header>
 
   <main>
-    <section class="card">
-      <h2>Guess the Location</h2>
-      <audio controls>
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
-        Your browser does not support the audio element.
-      </audio>
-      <p>Where in the world do you think this song is from?</p>
+    <section class="guess-card">
+      <div class="result-inner-panel">
+        <h2>Guess the Location</h2>
+        <audio controls>
+          <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
+        <p>Where in the world do you think this song is from?</p>
 
-      <form action="result.html" method="get">
-        <label for="country">Country:</label>
-        <input id="country" type="text" name="country" />
+        <form action="result.html" method="get" class="guess-form">
+          <label for="country">Country:</label>
+          <input id="country" type="text" name="country" />
 
-        <label for="city">City:</label>
-        <input id="city" type="text" name="city" />
+          <label for="city">City:</label>
+          <input id="city" type="text" name="city" />
 
-        <input type="submit" value="Submit Guess" />
-      </form>
+          <input type="submit" value="Submit Guess" />
+        </form>
 
-      <img
-        src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1200&q=80"
-        alt="World map"
-        style="display: block; width: 100%; max-width: 500px; height: auto; margin-top: 20px;"
-      />
+        <img
+          src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1200&q=80"
+          alt="World map"
+          style="display: block; width: 100%; max-width: 500px; height: auto; margin-top: 20px;"
+        />
+      </div>
     </section>
   </main>
 
