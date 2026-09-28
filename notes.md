@@ -72,3 +72,18 @@ Code Example
 .parent > div {
   border: 1px solid black; /* Styles applied to children */
 }
+
+
+NEW DEPLOY FILE COMMAND: ./deployFiles.sh -k "/c/Users/zoeyl/OneDrive/Desktop/CS260/CS-260.pem" -h 54.234.8.94 -s simon
+
+
+    try this sequence: 
+    - cd /c/Users/zoeyl/OneDrive/Desktop/CS260/CS260/simon-css
+
+    - sed -i 's/\r$//' deployFiles.sh
+
+    - chmod +x deployFiles.sh
+
+    - ./deployFiles.sh -k "/c/Users/zoeyl/OneDrive/Desktop/CS260/CS-260.pem" -h 54.234.8.94 -s simon
+
+OR::: sed -i 's/\r$//' deployFiles.sh && chmod +x deployFiles.sh && ./deployFiles.sh -k "/c/Users/zoeyl/OneDrive/Desktop/CS260/CS-260.pem" -h 54.234.8.94 -s startup
