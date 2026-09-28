@@ -3,18 +3,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Boldonse&display=swap');
 
 :root {
-  --bg-deep: #061521;
-  --bg-mid: #0d2035;
-  --bg-panel: rgba(11, 27, 45, 0.9);
-  --panel-alt: rgba(17, 38, 60, 0.9);
-  --navy: #113d67;
-  --navy-bright: #1a5a96;
-  --blue-soft: #86b8ff;
-  --gold: #f7c873;
-  --text-main: #eaf3ff;
-  --text-soft: #b7c9dd;
-  --line: rgba(142, 176, 214, 0.2);
-  --shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+  --bg-deep: #dfeaf3;
+  --bg-mid: #cfe0ef;
+  --bg-glow: #b7d2eb;
+  --bg-panel: rgba(255, 255, 255, 0.75);
+  --panel-alt: rgba(245, 249, 252, 0.88);
+  --navy: #204f7a;
+  --navy-bright: #4b7dad;
+  --blue-soft: #4d7dad;
+  --teal-soft: #6fb8bd;
+  --gold: #d9b46a;
+  --text-main: #1d3145;
+  --text-soft: #405f7a;
+  --line: rgba(46, 73, 94, 0.12);
+  --shadow: 0 18px 36px rgba(33, 58, 78, 0.12);
   --radius: 18px;
 }
 
@@ -65,9 +67,9 @@ body {
   min-height: 100vh;
   font-family: "Boldonse", system-ui, sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(28, 82, 142, 0.38), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(52, 120, 196, 0.18), transparent 30%),
-    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+    radial-gradient(circle at top left, rgba(133, 176, 216, 0.28), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(142, 213, 205, 0.16), transparent 28%),
+    linear-gradient(180deg, #edf5fb 0%, #dfeaf3 28%, #d4e3f1 100%);
   color: var(--text-main);
   line-height: 1.6;
   letter-spacing: 0.01em;
@@ -89,11 +91,28 @@ a:hover {
 }
 
 header {
-  background: rgba(5, 17, 29, 0.8);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(240, 245, 250, 0.8));
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
   position: static;
   z-index: 1;
+}
+
+.site-header {
+  display: block;
+  text-align: center;
+  padding-top: 1rem;
+  width: 100%;
+}
+
+.hero-banner-image {
+  display: block;
+  width: min(100%, 520px);
+  max-width: calc(100% - 32px);
+  height: auto;
+  margin: 20px auto 0;
+  border-radius: 16px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.24);
 }
 
 header .topbar {
@@ -112,12 +131,12 @@ header .topbar {
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #f2f7ff;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(32, 79, 122, 0.12);
   border-radius: 10px;
   padding: 0.45rem 0.9rem;
-  box-shadow: 0 8px 22px rgba(10, 22, 34, 0.35);
+  box-shadow: 0 8px 18px rgba(29, 47, 68, 0.06);
   display: inline-block;
 }
 
@@ -127,25 +146,30 @@ nav {
   z-index: 10;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem;
   align-items: center;
-  background: rgba(5, 17, 29, 0.8);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--line);
+  width: 100%;
 }
 
 nav a {
-  padding: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
   border-radius: 999px;
-  color: var(--text-main);
+  color: var(--navy);
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
 }
 
 nav a:hover {
-  border-color: var(--line);
-  background: rgba(134, 184, 255, 0.08);
+  border-color: rgba(38, 78, 112, 0.14);
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(30, 53, 69, 0.08);
 }
 
 main {
@@ -162,12 +186,26 @@ main {
   padding: 2rem 0 2.5rem;
 }
 
+main > section,
+main > .card {
+  margin-left: auto;
+  margin-right: auto;
+  width: min(100%, 1100px);
+}
+
 .hero-copy {
-  background: rgba(10, 24, 40, 0.7);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(16, 32, 43, 0.8), rgba(12, 25, 36, 0.86));
+  border: 1px solid rgba(184, 212, 235, 0.12);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 16px 34px rgba(3, 13, 22, 0.22);
   padding: 2rem;
+  text-align: center;
+}
+
+.hero-copy p {
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hero-copy h1,
@@ -243,9 +281,9 @@ input[type="button"]:hover {
 .btn-primary,
 button.primary,
 input[type="submit"] {
-  background: linear-gradient(135deg, var(--navy-bright), #2f80ed);
+  background: linear-gradient(135deg, #2a6fb3 0%, #4ab9d9 100%);
   color: white;
-  box-shadow: 0 10px 22px rgba(26, 90, 150, 0.45);
+  box-shadow: 0 10px 22px rgba(34, 118, 185, 0.36);
 }
 
 .btn-secondary {
@@ -261,10 +299,10 @@ input[type="submit"] {
 }
 
 .card {
-  background: rgba(12, 25, 39, 0.82);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(17, 34, 48, 0.78), rgba(9, 22, 34, 0.84));
+  border: 1px solid rgba(177, 204, 230, 0.12);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 28px rgba(2, 11, 18, 0.22);
   padding: 1.5rem;
 }
 
