@@ -13,7 +13,7 @@
       <h1 class="brand" style="margin-bottom: 8px;">TuneCatcher</h1>
       <span class="brand-icon brand-icon-plane" aria-hidden="true">✈</span>
     </div>
-    <nav style="margin-bottom: 10px;">
+    <nav>
       <a href="index.html">Home</a>
       <a href="login.html">Login</a>
       <a href="about.html">About</a>
@@ -22,16 +22,37 @@
     </nav>
   </header>
 
-  <main>
+  <main class="result-page">
     <section class="result-card">
       <div class="result-inner-panel">
         <p class="result-badge">Nice!</p>
         <p class="result-subtitle">Here are your results:</p>
-        <p class="result-line">Your guess: Kenya, Nairobi</p>
-        <p class="result-line"><span class="result-actual">Actual location:</span> Kenya, Nairobi</p>
-        <p class="result-line"><span class="result-score">Score:</span> 980 points</p>
+
+        <div class="result-stats">
+          <div class="result-metric">
+            <span class="result-metric-label">Your guess</span>
+            <span class="result-metric-value guess-value">Kenya, Nairobi</span>
+          </div>
+          <div class="result-metric">
+            <span class="result-metric-label">Actual location</span>
+            <span class="result-metric-value actual-value">Kenya, Nairobi</span>
+          </div>
+          <div class="result-metric result-score-box">
+            <span class="result-metric-label">Score</span>
+            <span class="result-metric-value score-value">980 points</span>
+          </div>
+        </div>
       </div>
     </section>
+
+    <aside class="result-board-card">
+      <h3>Top scores</h3>
+      <ol>
+        <li><span>Jules</span><strong>980</strong></li>
+        <li><span>Aria</span><strong>950</strong></li>
+        <li><span>Maya</span><strong>920</strong></li>
+      </ol>
+    </aside>
   </main>
 
   <footer>
