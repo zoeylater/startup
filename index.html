@@ -29,67 +29,48 @@
   </header>
 
   <main class="container py-4">
-    <section class="card hero-copy shadow-sm border-0 rounded-4">
-      <div class="hero-copy-inner p-3 p-md-4">
-        <h2 class="mb-3">Daily Music Challenge</h2>
-        <p class="mb-2">Each day, you get a short song clip and must guess where in the world it comes from. The closer your country and city guess is, the more points you earn.</p>
-        <p class="mb-0">Play solo or compete with the top daily high scores.</p>
+   <section class="hero-copy">
+    <h2 class="mb-3">Daily Music Challenge</h2>
+
+    <p class="hero-pitch mb-0">
+      Think you can recognize a song and place it on the map? TuneCatcher
+      challenges you to do both. Listen to a song, guess where it comes from,
+      and compete for a spot on the daily leaderboard—all while discovering
+      new music and geography.
+    </p>
+  </section>
+
+  <section class="how-it-works">
+    <h2 class="text-center">How to Play</h2>
+
+    <div class="row g-3 text-center">
+      <div class="col-md-4">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Listen</h3>
+          <p>Hear the daily song clip.</p>
+        </div>
       </div>
-    </section>
 
-    <div class="accordion-wrap mt-4">
-      <details class="card accordion-item shadow-sm border-0 rounded-4">
-        <summary>Application Data</summary>
-        <div class="accordion-content">
-          <p>User: Maya</p>
-          <p>Current Song: Daily track snippet</p>
-          <p>Country Guess: Not yet submitted</p>
-          <p>Daily Status: Round is live</p>
-          <p>Quote: "Music and geography are a perfect match."</p>
+      <div class="col-md-4">
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Guess</h3>
+          <p>Place the music on the map.</p>
         </div>
-      </details>
+      </div>
 
-      <details class="card accordion-item">
-        <summary>Database Data</summary>
-        <div class="accordion-content">
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Daily Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Jules</td>
-                <td>980</td>
-              </tr>
-              <tr>
-                <td>Aria</td>
-                <td>950</td>
-              </tr>
-              <tr>
-                <td>Maya</td>
-                <td>920</td>
-              </tr>
-            </tbody>
-          </table>
+      <div class="col-md-4">
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Score</h3>
+          <p>Earn points based on your answer.</p>
         </div>
-      </details>
-
-      <details class="card accordion-item">
-        <summary>WebSocket Data</summary>
-        <div class="accordion-content">
-          <ul id="websocket-data">
-            <li>New daily high score set by Jules</li>
-            <li>Player Maya submitted a guess</li>
-            <li>Leaderboard refreshed 5 seconds ago</li>
-          </ul>
-        </div>
-      </details>
-
+      </div>
     </div>
-  </main>
+  </section>
+
+</main>
 
   <footer>
     <div class="footer-content">

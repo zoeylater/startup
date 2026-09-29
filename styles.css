@@ -1117,5 +1117,99 @@ footer .footer-content {
   input[type="submit"],
   input[type="button"] {
     width: 100%;
+.step-card {
+  height: 100%;
+  padding: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dfeeff;
+}
+
+.step-card h3 {
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.how-it-works {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.how-it-works > h3 {
+  margin-bottom: 1.2rem;
+  color: #ffffff;
+  text-align: center;
+  font-size: 1.4rem;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.step-card {
+  padding: 1.1rem 0.8rem;
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.04)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.step-card:hover {
+  transform: translateY(-4px);
+  background: linear-gradient(
+    180deg,
+    rgba(111, 184, 189, 0.28),
+    rgba(255, 255, 255, 0.06)
+  );
+}
+
+.step-number {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0 auto 0.5rem;
+  border-radius: 50%;
+  background: #6fb8bd;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.step-icon {
+  margin-bottom: 0.35rem;
+  color: #d9b46a;
+  font-size: 1.5rem;
+}
+
+.step-card h4 {
+  margin-bottom: 0.35rem;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.step-card p {
+  margin: 0;
+  color: #dfeeff;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 650px) {
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
   }
 }
