@@ -87,3 +87,12 @@ NEW DEPLOY FILE COMMAND: ./deployFiles.sh -k "/c/Users/zoeyl/OneDrive/Desktop/CS
     - ./deployFiles.sh -k "/c/Users/zoeyl/OneDrive/Desktop/CS260/CS-260.pem" -h 54.234.8.94 -s simon
 
 OR::: sed -i 's/\r$//' deployFiles.sh && chmod +x deployFiles.sh && ./deployFiles.sh -k "/c/Users/zoeyl/OneDrive/Desktop/CS260/CS-260.pem" -h 54.234.8.94 -s startup
+
+
+- CTRL C when quitting an execution
+- tab to auto complete a terminal
+- ls shows all the files in the directory
+- control + shift + v for paste
+- control + shift + c for copy
+
+- use HTML to jsx converter !!!!!
