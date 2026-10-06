@@ -96,3 +96,5 @@ OR::: sed -i 's/\r$//' deployFiles.sh && chmod +x deployFiles.sh && ./deployFile
 - control + shift + c for copy
 
 - use HTML to jsx converter !!!!!
+
+-using this as a test 
