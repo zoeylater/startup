@@ -4,7 +4,9 @@
   "description": "This application, **TuneCatcher**, will combine guessing elements from the game \"GeoGuessr\" with music trivia. Every day, you will be given a short snippet of a song. Then, you have to guess where in the world it's from — this could range from Kenya, to Romania, to the USA, with many possibilities in between. The closer you are to the correct country and city, the more points you get. After you have made your guess, you can see how your results compare to the daily high scores.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
@@ -20,12 +22,5 @@
   "homepage": "https://github.com/zoeylater/CS260#readme",
   "devDependencies": {
     "vite": "^8.3.3"
-  },
-  "dependencies": {
-    "bootstrap": "^5.3.8",
-    "react": "^19.3.0",
-    "react-bootstrap": "^2.10.10",
-    "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4"
   }
 }
