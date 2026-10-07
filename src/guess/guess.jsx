@@ -1,6 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Guess() {
+  const navigate = useNavigate();
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    navigate('/result');
+  }
+
   return (
  <main className="container py-4">
     <section className="guess-card shadow-sm border-0 rounded-4">
@@ -12,7 +20,7 @@ export default function Guess() {
         </audio>
         <p className="mb-3">Where in the world do you think this song is from?</p>
 
-        <form action="/result" method="get" className="guess-form row g-3">
+        <form onSubmit={handleSubmit} className="guess-form row g-3">
           <div className="col-12 col-md-6">
             <label htmlFor="country" className="form-label">Country:</label>
             <input id="country" type="text" name="country" className="form-control" />
