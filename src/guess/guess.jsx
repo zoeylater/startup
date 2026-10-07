@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import mapImage from '../assets/map.jpg';
 
 export default function Guess() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function Guess() {
         </form>
 
         <img
-          src="map.jpg"
+          src={mapImage}
           alt="World map"
           className="guess-map-image img-fluid mt-4 mx-auto d-block"
         />

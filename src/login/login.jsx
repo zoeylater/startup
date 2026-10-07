@@ -1,7 +1,15 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
+  const navigate = useNavigate();
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    navigate('/');
+  }
+
   return (
   <main className="container py-4">
     <section className="card auth-card shadow-sm border-0 rounded-4">
@@ -13,7 +21,7 @@ export default function Login() {
 
     <section className="card auth-form-card shadow-sm border-0 rounded-4 mt-4">
       <div className="auth-form-card-inner p-3 p-md-4">
-        <form action="/" method="post" className="row g-3">
+        <form onSubmit={handleSubmit} className="row g-3">
           <div className="col-12">
             <label htmlFor="username" className="form-label">Username</label>
             <input id="username" type="text" name="username" className="form-control" />
