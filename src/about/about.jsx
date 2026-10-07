@@ -1,15 +1,19 @@
- <main class="container py-4">
-    <section class="card about-card shadow-sm border-0 rounded-4">
-      <div class="about-card-inner p-3 p-md-4">
-        <h2 class="mb-3">About This App</h2>
-        <p class="mb-2">TuneCatcher combines music trivia and geography. Players listen to a short song clip and guess where in the world it comes from.</p>
-        <p class="mb-0">It will eventually include account creation, score tracking, and live leaderboard updates.</p>
+import React from 'react';
+
+export default function About() {
+  return (
+ <main className="container py-4">
+    <section className="card about-card shadow-sm border-0 rounded-4">
+      <div className="about-card-inner p-3 p-md-4">
+        <h2 className="mb-3">About This App</h2>
+        <p className="mb-2">TuneCatcher combines music trivia and geography. Players listen to a short song clip and guess where in the world it comes from.</p>
+        <p className="mb-0">It will eventually include account creation, score tracking, and live leaderboard updates.</p>
       </div>
     </section>
 
-    <details class="card accordion-item shadow-sm border-0 rounded-4 mt-4">
+    <details className="card accordion-item shadow-sm border-0 rounded-4 mt-4">
       <summary>Why the Layout Works</summary>
-      <div class="accordion-content">
+      <div className="accordion-content">
         <p>
           I used <strong>flexbox</strong> for this layout because it makes the page easier to organize without having to manually position everything.
           The whole app is basically set up as a stack: header, main content, and footer. That way, the page stays clean and structured even when the screen size changes.
@@ -39,10 +43,10 @@
     </details>
 
 
-    <div class="accordion-wrap mt-4">
-      <details class="card accordion-item shadow-sm border-0 rounded-4">
+    <div className="accordion-wrap mt-4">
+      <details className="card accordion-item shadow-sm border-0 rounded-4">
         <summary>Application Data</summary>
-        <div class="accordion-content">
+        <div className="accordion-content">
           <p>User: Maya</p>
           <p>Current Song: Daily track snippet</p>
           <p>Country Guess: Not yet submitted</p>
@@ -51,9 +55,9 @@
         </div>
       </details>
 
-      <details class="card accordion-item">
+      <details className="card accordion-item">
         <summary>Database Data</summary>
-        <div class="accordion-content">
+        <div className="accordion-content">
           <table>
             <thead>
               <tr>
@@ -79,9 +83,9 @@
         </div>
       </details>
 
-      <details class="card accordion-item">
+      <details className="card accordion-item">
         <summary>WebSocket Data</summary>
-        <div class="accordion-content">
+        <div className="accordion-content">
           <ul id="websocket-data">
             <li>New daily high score set by Jules</li>
             <li>Player Maya submitted a guess</li>
@@ -91,3 +95,5 @@
       </details>
     </div>
   </main>
+  );
+}
