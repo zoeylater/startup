@@ -128,10 +128,10 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [X] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [X] **Bundled using Vite** - I completed this part of the deliverable.
-- [X] **Components** - I completed this part of the deliverable.
-- [X] **Router** - I completed this part of the deliverable.
+- [X] I did complete the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [X] **Bundled using Vite** - I did complete this part of the deliverable.
+- [X] **Components** - I did complete this part of the deliverable.
+- [X] **Router** - I did complete this part of the deliverable.
 
 ## 🚀 React part 2: Reactivity deliverable
 
