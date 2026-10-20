@@ -84,7 +84,10 @@ export default function About({
                   {panel.id === 'application' && (
                     <dl className="about-data-list">
                       <div><dt>Player</dt><dd>{user || 'Guest'}</dd></div>
-                      <div><dt>Current song</dt><dd>{challenge.title}</dd></div>
+                      <div>
+                        <dt>Current song</dt>
+                        <dd>{challenge.musicMetadata.title}</dd>
+                      </div>
                       <div>
                         <dt>Map guess</dt>
                         <dd>

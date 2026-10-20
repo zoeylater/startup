@@ -15,13 +15,21 @@ const INITIAL_SCORES = [
   { name: 'Maya', score: 920 },
 ];
 const CHALLENGE = {
-  title: 'Daily Track Preview',
-  artist: 'SoundHelix',
+  musicMetadata: {
+    source: 'MusicBrainz metadata mock',
+    recordingId: 'mock-recording-001',
+    title: 'Daily Track Preview',
+    artist: 'TuneCatcher Sample Artist',
+    release: 'TuneCatcher Daily Collection',
+  },
   country: 'Kenya',
   city: 'Nairobi',
   latitude: -1.286389,
   longitude: 36.817223,
-  audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  preview: {
+    source: 'Standalone audio sample',
+    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  },
 };
 const LIVE_PLAYERS = ['Jules', 'Aria', 'Maya'];
 

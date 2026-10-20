@@ -99,4 +99,4 @@ OR::: sed -i 's/\r$//' deployFiles.sh && chmod +x deployFiles.sh && ./deployFile
 
 -using this as a test 
 
--Musicbrainz could be a better API than Deezer. I could use both together but as of right now I will choose Musicbrainz
+- Use MusicBrainz for music recording, artist, and release metadata. For now, the app uses a local MusicBrainz-shaped mock fixture and does not make API requests. Keep the audio preview as a separate sample source because MusicBrainz does not host preview audio.

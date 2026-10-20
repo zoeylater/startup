@@ -50,8 +50,13 @@ export default function Guess({ user, challenge, guess, onSubmitGuess }) {
             Listen to the 30-second preview and place a pin where you think the
             song comes from.
           </p>
-          <h3 className="track-title">{challenge.title}</h3>
-          <p className="track-artist">{challenge.artist}</p>
+          <h3 className="track-title">{challenge.musicMetadata.title}</h3>
+          <p className="track-artist">
+            {challenge.musicMetadata.artist} · {challenge.musicMetadata.release}
+          </p>
+          <p className="track-source">
+            {challenge.musicMetadata.source} · Preview: {challenge.preview.source}
+          </p>
           <audio
             ref={audioRef}
             controls
@@ -70,7 +75,7 @@ export default function Guess({ user, challenge, guess, onSubmitGuess }) {
               }
             }}
           >
-            <source src={challenge.audioUrl} type="audio/mpeg" />
+            <source src={challenge.preview.url} type="audio/mpeg" />
             Your browser does not support the audio element.
           </audio>
           <p className="preview-status" aria-live="polite">

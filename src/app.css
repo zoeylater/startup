@@ -807,10 +807,15 @@ select {
 }
 
 .track-artist,
+.track-source,
 .preview-status {
   margin: 0.25rem 0 0.75rem;
   color: var(--dark-muted);
   text-align: center;
+}
+
+.track-source {
+  font-size: 0.82rem;
 }
 
 .daily-track-player {
