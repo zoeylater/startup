@@ -1,99 +1,138 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-export default function About() {
+const panels = [
+  { id: 'layout', title: 'Why the Layout Works' },
+  { id: 'application', title: 'Application Data' },
+  { id: 'database', title: 'Leaderboard Data' },
+  { id: 'activity', title: 'Recent Activity' },
+];
+
+export default function About({
+  user,
+  guess,
+  scores,
+  activity,
+  challenge,
+  dailyStatus,
+}) {
+  const [openPanel, setOpenPanel] = useState('layout');
+
+  function togglePanel(panelId) {
+    setOpenPanel((currentPanel) => currentPanel === panelId ? '' : panelId);
+  }
+
   return (
- <main className="container py-4">
-    <section className="card about-card shadow-sm border-0 rounded-4">
-      <div className="about-card-inner p-3 p-md-4">
-        <h2 className="mb-3">About This App</h2>
-        <p className="mb-2">TuneCatcher combines music trivia and geography. Players listen to a short song clip and guess where in the world it comes from.</p>
-        <p className="mb-0">It will eventually include account creation, score tracking, and live leaderboard updates.</p>
+    <main className="container py-4">
+      <section className="card about-card shadow-sm border-0 rounded-4">
+        <div className="about-card-inner p-3 p-md-4">
+          <h2 className="mb-3">About This App</h2>
+          <p className="mb-2">
+            TuneCatcher combines music trivia and geography. Players listen to
+            a short song clip and guess where in the world it comes from.
+          </p>
+          <p className="mb-0">
+            This interactive demo keeps your session and leaderboard in React
+            state. A backend can be connected for accounts and shared scores.
+          </p>
+        </div>
+      </section>
+
+      <div className="accordion-wrap mt-4">
+        {panels.map((panel) => {
+          const expanded = openPanel === panel.id;
+
+          return (
+            <section className={`card accordion-item${expanded ? ' is-open' : ''}`} key={panel.id}>
+              <h3 className="accordion-heading">
+                <button
+                  type="button"
+                  className="accordion-toggle"
+                  aria-expanded={expanded}
+                  aria-controls={`${panel.id}-content`}
+                  onClick={() => togglePanel(panel.id)}
+                >
+                  {panel.title}
+                  <span aria-hidden="true">{expanded ? '−' : '+'}</span>
+                </button>
+              </h3>
+              {expanded && (
+                <div className="accordion-content" id={`${panel.id}-content`}>
+                  {panel.id === 'layout' && (
+                    <>
+                      <p>
+                        The app uses a flexible page structure: the header and
+                        footer frame the main content, which adapts to smaller
+                        screens.
+                      </p>
+                      <ul>
+                        <li><strong>Header</strong> keeps the brand and navigation together.</li>
+                        <li><strong>Main</strong> holds the page content.</li>
+                        <li><strong>Footer</strong> contains extra site information.</li>
+                      </ul>
+                    </>
+                  )}
+
+                  {panel.id === 'application' && (
+                    <dl className="about-data-list">
+                      <div><dt>Player</dt><dd>{user || 'Guest'}</dd></div>
+                      <div><dt>Current song</dt><dd>{challenge.title}</dd></div>
+                      <div>
+                        <dt>Country guess</dt>
+                        <dd>{guess ? `${guess.country}, ${guess.city}` : 'Not yet submitted'}</dd>
+                      </div>
+                      <div><dt>Daily status</dt><dd>{dailyStatus}</dd></div>
+                      <div><dt>Quote</dt><dd>“Music and geography are a perfect match.”</dd></div>
+                    </dl>
+                  )}
+
+                  {panel.id === 'database' && (
+                    <>
+                      <p className="about-demo-note">
+                        Demo leaderboard data lives in the current app session;
+                        it is not stored in a remote database.
+                      </p>
+                      <div className="table-responsive">
+                        <table>
+                          <thead>
+                            <tr><th scope="col">Player</th><th scope="col">Daily Score</th></tr>
+                          </thead>
+                          <tbody>
+                            {scores.length > 0 ? scores.map((entry, index) => (
+                              <tr key={`${entry.name}-${index}`}>
+                                <td>{entry.name}</td>
+                                <td>{entry.score}</td>
+                              </tr>
+                            )) : (
+                              <tr><td colSpan="2">No scores yet. Play today’s challenge!</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+
+                  {panel.id === 'activity' && (
+                    <>
+                      <p className="about-demo-note">
+                        Activity updates when a player signs in or submits a guess.
+                      </p>
+                      {activity.length > 0 ? (
+                        <ul aria-live="polite">
+                          {activity.map((message, index) => (
+                            <li key={`${message}-${index}`}>{message}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p>No activity yet.</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
+          );
+        })}
       </div>
-    </section>
-
-    <details className="card accordion-item shadow-sm border-0 rounded-4 mt-4">
-      <summary>Why the Layout Works</summary>
-      <div className="accordion-content">
-        <p>
-          I used <strong>flexbox</strong> for this layout because it makes the page easier to organize without having to manually position everything.
-          The whole app is basically set up as a stack: header, main content, and footer. That way, the page stays clean and structured even when the screen size changes.
-        </p>
-
-        <p>
-          The main thing is that the body is a flex container, and the children are arranged in a column. Then the header and footer get a fixed amount of space, while the main section gets whatever is left over.
-          That makes the design feel more balanced and keeps the app from looking like a bunch of random boxes floating around.
-        </p>
-
-        <ul>
-          <li><strong>header</strong> - keeps the brand and navigation at the top.</li>
-          <li><strong>footer</strong> - stays at the bottom and holds the extra site info.</li>
-          <li><strong>main</strong> - fills the remaining space and holds the actual content.</li>
-        </ul>
-
-        <p>
-          I also made the main section into its own flex container so the content inside can sit side by side on larger screens, but stack nicely when the screen gets narrower.
-          That is why it still looks organized on mobile instead of being cramped or squished together.
-        </p>
-
-        <p>
-          The media queries are the part that helps it respond to smaller screens. When the width gets too small, the layout changes from a row to a column so the content is easier to read.
-          It is a pretty simple setup, but it works really well for a project like this because it keeps the page flexible without making the code too complicated.
-        </p>
-      </div>
-    </details>
-
-
-    <div className="accordion-wrap mt-4">
-      <details className="card accordion-item shadow-sm border-0 rounded-4">
-        <summary>Application Data</summary>
-        <div className="accordion-content">
-          <p>User: Maya</p>
-          <p>Current Song: Daily track snippet</p>
-          <p>Country Guess: Not yet submitted</p>
-          <p>Daily Status: Round is live</p>
-          <p>Quote: "Music and geography are a perfect match."</p>
-        </div>
-      </details>
-
-      <details className="card accordion-item">
-        <summary>Database Data</summary>
-        <div className="accordion-content">
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Daily Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Jules</td>
-                <td>980</td>
-              </tr>
-              <tr>
-                <td>Aria</td>
-                <td>950</td>
-              </tr>
-              <tr>
-                <td>Maya</td>
-                <td>920</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
-
-      <details className="card accordion-item">
-        <summary>WebSocket Data</summary>
-        <div className="accordion-content">
-          <ul id="websocket-data">
-            <li>New daily high score set by Jules</li>
-            <li>Player Maya submitted a guess</li>
-            <li>Leaderboard refreshed 5 seconds ago</li>
-          </ul>
-        </div>
-      </details>
-    </div>
-  </main>
+    </main>
   );
 }

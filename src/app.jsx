@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './app.css';
@@ -20,6 +20,67 @@ function NotFound() {
 }
 
 export default function App() {
+  const [user, setUser] = useState('');
+  const [guess, setGuess] = useState(null);
+  const [scores, setScores] = useState([
+    { name: 'Jules', score: 980 },
+    { name: 'Aria', score: 950 },
+    { name: 'Maya', score: 920 },
+  ]);
+  const [activity, setActivity] = useState([
+    'Daily challenge is ready to play.',
+  ]);
+
+  const challenge = {
+    title: 'Daily track snippet',
+    country: 'Kenya',
+    city: 'Nairobi',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  };
+
+  function handleLogin(username) {
+    setUser(username);
+    setActivity((current) => [`${username} started a demo session.`, ...current].slice(0, 8));
+  }
+
+  function handleLogout() {
+    setActivity((current) => [`${user} signed out.`, ...current].slice(0, 8));
+    setUser('');
+  }
+
+  function handleGuessSubmission(submittedGuess) {
+    const countryMatches = submittedGuess.country.trim().toLowerCase()
+      === challenge.country.toLowerCase();
+    const cityMatches = submittedGuess.city.trim().toLowerCase()
+      === challenge.city.toLowerCase();
+    const score = countryMatches && cityMatches
+      ? 1000
+      : countryMatches
+        ? 500
+        : cityMatches
+          ? 250
+          : 0;
+    const result = {
+      ...submittedGuess,
+      name: user || 'Guest',
+      score,
+      actualCountry: challenge.country,
+      actualCity: challenge.city,
+    };
+
+    setGuess(result);
+    setScores((currentScores) => {
+      const previousBest = currentScores.find((entry) => entry.name === result.name)?.score ?? 0;
+      const bestScores = currentScores.filter((entry) => entry.name !== result.name);
+      bestScores.push({ name: result.name, score: Math.max(previousBest, score) });
+      return bestScores.sort((first, second) => second.score - first.score).slice(0, 5);
+    });
+    setActivity((current) => [
+      `${result.name} submitted a guess and scored ${score} points.`,
+      ...current,
+    ].slice(0, 8));
+  }
+
   return (
     <BrowserRouter>
       <div className="body bg-dark text-light">
@@ -35,15 +96,48 @@ export default function App() {
             <Link to="/about">About</Link>
             <Link to="/guess">Guess</Link>
             <Link to="/result">Result</Link>
+            {user ? (
+              <button type="button" className="nav-session-button" onClick={handleLogout}>
+                Sign out ({user})
+              </button>
+            ) : null}
           </nav>
         </header>
 
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/guess" element={<Guess />} />
-          <Route path="/result" element={<Result />} />
+          <Route path="/" element={<Home user={user} hasPlayed={Boolean(guess)} />} />
+          <Route
+            path="/login"
+            element={<Login user={user} onLogin={handleLogin} />}
+          />
+          <Route
+            path="/about"
+            element={(
+              <About
+                user={user}
+                guess={guess}
+                scores={scores}
+                activity={activity}
+                challenge={challenge}
+                dailyStatus={guess ? 'Round complete' : 'Round is live'}
+              />
+            )}
+          />
+          <Route
+            path="/guess"
+            element={(
+              <Guess
+                user={user}
+                challenge={challenge}
+                guess={guess}
+                onSubmitGuess={handleGuessSubmission}
+              />
+            )}
+          />
+          <Route
+            path="/result"
+            element={<Result result={guess} scores={scores} />}
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
 
@@ -65,4 +159,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

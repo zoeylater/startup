@@ -476,12 +476,45 @@ details.card.accordion-item summary {
   margin: 0;
 }
 
+.accordion-heading {
+  margin: 0;
+}
+
+.accordion-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "Lora", serif;
+  font-size: 1.35rem;
+  color: #f3f9ff;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+}
+
+.accordion-toggle span {
+  margin-left: 1rem;
+  color: #d9b46a;
+}
+
+.accordion-toggle:focus-visible,
+.instructions-toggle:focus-visible,
+.leaderboard-toggle:focus-visible,
+.nav-session-button:focus-visible {
+  outline: 3px solid #d9efff;
+  outline-offset: 3px;
+}
+
 .accordion-item summary::-webkit-details-marker {
   display: none;
 }
 
-.accordion-item[open] summary {
+.accordion-item.is-open .accordion-toggle {
   margin-bottom: 0.9rem;
+}
+
+.accordion-item:not(.is-open) .accordion-toggle {
+  margin-bottom: 0;
 }
 
 .accordion-content {
@@ -491,6 +524,62 @@ details.card.accordion-item summary {
   border-radius: 16px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   margin-bottom: 1rem;
+}
+
+.about-data-list {
+  margin: 0;
+}
+
+.about-data-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.about-data-list > div:last-child {
+  border-bottom: 0;
+}
+
+.about-data-list dt {
+  font-weight: 700;
+}
+
+.about-data-list dd {
+  margin: 0;
+  text-align: right;
+}
+
+.about-demo-note,
+.result-demo-note {
+  color: var(--dark-muted);
+  font-size: 0.9rem;
+}
+
+.about-demo-note {
+  text-align: center;
+}
+
+.instructions-toggle,
+.leaderboard-toggle {
+  width: auto;
+  margin: 1rem auto 0;
+  padding: 0.45rem 0.8rem;
+  color: #eaf6ff;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.9rem;
+}
+
+.nav-session-button {
+  width: auto;
+  padding: 0.45rem 0.8rem;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(38, 78, 112, 0.14);
+  font-size: 0.9rem;
 }
 
 .details-card,
