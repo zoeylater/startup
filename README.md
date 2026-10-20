@@ -136,7 +136,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 Player names and progress persist in browser storage; when the app is loaded on a new local calendar day, the daily guess and scores reset while the player name is retained. The leaderboard and activity feed receive simulated updates, map clicks place a guess pin and calculate distance-based scores, and the audio sample is capped at 30 seconds. MusicBrainz metadata and Deezer preview settings are local fixtures; no API calls, real account authentication, remote database, or WebSocket server are connected yet.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [X] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
 - [X] **All functionality implemented or mocked out** - Player progress persists locally, daily guesses and scores reset each day, leaderboard updates are simulated, map guesses and distance scoring work, previews are limited to 30 seconds, and MusicBrainz metadata and Deezer preview configuration are represented by local mock fixtures.
 - [X] **Hooks** - React state and effects manage page state, persistence, and the simulated live activity feed.
 
