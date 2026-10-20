@@ -9,12 +9,12 @@ import Login from './login/login';
 import Result from './result/result';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
-const CHALLENGE_DATE = (() => {
+function getLocalDateKey() {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   return `${today.getFullYear()}-${month}-${day}`;
-})();
+}
 const INITIAL_SCORES = [
   { name: 'Jules', score: 980 },
   { name: 'Aria', score: 950 },
@@ -85,6 +85,7 @@ export default function App() {
   const [activity, setActivity] = useState([
     'Daily challenge is ready to play.',
   ]);
+  const [dailyDate, setDailyDate] = useState(getLocalDateKey);
   const [storageReady, setStorageReady] = useState(false);
   const [storageError, setStorageError] = useState('');
 
@@ -93,11 +94,13 @@ export default function App() {
       const storedValue = window.localStorage.getItem(STORAGE_KEY);
       if (storedValue) {
         const savedState = JSON.parse(storedValue);
+        const today = getLocalDateKey();
         if (!isSavedState(savedState)) {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
         setUser(savedState.user || '');
-        if (savedState.date && savedState.date !== CHALLENGE_DATE) {
+        setDailyDate(today);
+        if (savedState.date && savedState.date !== today) {
           setGuess(null);
           setScores(INITIAL_SCORES);
           setActivity(['Daily challenge is ready to play.']);
@@ -128,7 +131,7 @@ export default function App() {
         guess,
         scores,
         activity,
-        date: CHALLENGE_DATE,
+        date: dailyDate,
       }));
       setStorageError((current) => (
         current.startsWith('Could not save progress:') ? '' : current
@@ -140,7 +143,33 @@ export default function App() {
           : 'Could not save progress.',
       );
     }
-  }, [storageReady, user, guess, scores, activity]);
+  }, [storageReady, user, guess, scores, activity, dailyDate]);
+
+  useEffect(() => {
+    if (!storageReady) {
+      return undefined;
+    }
+
+    function resetForNewDay() {
+      const today = getLocalDateKey();
+      if (today !== dailyDate) {
+        setDailyDate(today);
+        setGuess(null);
+        setScores(INITIAL_SCORES);
+        setActivity(['Daily challenge is ready to play.']);
+      }
+    }
+
+    const intervalId = window.setInterval(resetForNewDay, 60000);
+    document.addEventListener('visibilitychange', resetForNewDay);
+    window.addEventListener('focus', resetForNewDay);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', resetForNewDay);
+      window.removeEventListener('focus', resetForNewDay);
+    };
+  }, [storageReady, dailyDate]);
 
   useEffect(() => {
     let updateIndex = 0;
