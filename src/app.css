@@ -568,11 +568,16 @@ input[type="submit"] {
 
 .nav-session-button {
   width: auto;
-  padding: 0.45rem 0.8rem;
+  max-width: clamp(7rem, 24vw, 14rem);
+  padding: clamp(0.3rem, 0.7vw, 0.45rem) clamp(0.4rem, 1.2vw, 0.8rem);
   color: var(--navy);
   background: rgba(255, 255, 255, 0.45);
   border: 1px solid rgba(38, 78, 112, 0.14);
-  font-size: 0.9rem;
+  font-size: clamp(0.68rem, 1.2vw, 0.9rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .details-card,
