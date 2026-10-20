@@ -40,8 +40,8 @@ export default function About({
             a short song clip and guess where in the world it comes from.
           </p>
           <p className="mb-0">
-            This interactive demo keeps your session and leaderboard in React
-            state. A backend can be connected for accounts and shared scores.
+            Keep track of your daily guess, follow the leaderboard, and discover
+            music from around the world.
           </p>
         </div>
       </section>
@@ -86,8 +86,12 @@ export default function About({
                       <div><dt>Player</dt><dd>{user || 'Guest'}</dd></div>
                       <div><dt>Current song</dt><dd>{challenge.title}</dd></div>
                       <div>
-                        <dt>Country guess</dt>
-                        <dd>{guess ? `${guess.country}, ${guess.city}` : 'Not yet submitted'}</dd>
+                        <dt>Map guess</dt>
+                        <dd>
+                          {guess
+                            ? `${guess.latitude.toFixed(2)}°, ${guess.longitude.toFixed(2)}°`
+                            : 'Not yet submitted'}
+                        </dd>
                       </div>
                       <div><dt>Daily status</dt><dd>{dailyStatus}</dd></div>
                       <div><dt>Quote</dt><dd>“Music and geography are a perfect match.”</dd></div>
@@ -96,9 +100,9 @@ export default function About({
 
                   {panel.id === 'database' && (
                     <>
-                      <p className="about-demo-note">
-                        Demo leaderboard data lives in the current app session;
-                        it is not stored in a remote database.
+                      <p className="about-note">
+                        Scores are ranked by points. Your leaderboard updates as
+                        players submit their guesses.
                       </p>
                       <div className="table-responsive">
                         <table>
@@ -122,8 +126,8 @@ export default function About({
 
                   {panel.id === 'activity' && (
                     <>
-                      <p className="about-demo-note">
-                        Activity updates when a player signs in or submits a guess.
+                      <p className="about-note">
+                        New leaderboard updates appear while you play.
                       </p>
                       {activity.length > 0 ? (
                         <ul aria-live="polite">

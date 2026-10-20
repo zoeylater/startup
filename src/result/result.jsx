@@ -17,7 +17,7 @@ export default function Result({ result, scores }) {
                 <div className="result-metric col-12 col-md-4">
                   <span className="result-metric-label">Your guess</span>
                   <span className="result-metric-value guess-value">
-                    {result.country}, {result.city}
+                    {result.latitude.toFixed(2)}°, {result.longitude.toFixed(2)}°
                   </span>
                 </div>
                 <div className="result-metric col-12 col-md-4">
@@ -31,9 +31,9 @@ export default function Result({ result, scores }) {
                   <span className="result-metric-value score-value">{result.score} points</span>
                 </div>
               </div>
-              <p className="result-demo-note">
-                Demo scoring: 1,000 points for both matches, 500 for the country,
-                250 for the city, and 0 for neither.
+              <p className="result-note">
+                You were approximately {result.distanceKm.toLocaleString()} km
+                from the correct location.
               </p>
               <Link className="btn btn-primary mt-3" to="/guess">Play again</Link>
             </>
@@ -66,8 +66,8 @@ export default function Result({ result, scores }) {
             )) : <li>No scores yet</li>}
           </ol>
         )}
-        <p className="result-demo-note mb-0">
-          Scores are shared only within this demo session.
+        <p className="result-note mb-0">
+          The leaderboard updates as players submit their guesses.
         </p>
       </aside>
     </main>

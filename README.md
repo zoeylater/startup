@@ -135,11 +135,11 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 ## 🚀 React part 2: Reactivity deliverable
 
-For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
+Player progress and submitted guesses are saved in browser storage so they remain available after a reload. The leaderboard activity feed periodically receives simulated updates, the map image supports placing a guess pin, and the preview player stops playback after 30 seconds. These provide working frontend stand-ins for the planned service, WebSocket, Leaflet, and Deezer integrations.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [ ] **All functionality implemented or mocked out** - I did not complete this part of the deliverable.
-- [ ] **Hooks** - I did not complete this part of the deliverable.
+- [X] **All functionality implemented or mocked out** - Player progress persists locally, leaderboard updates are simulated, map guesses and distance scoring work, and previews are limited to 30 seconds.
+- [X] **Hooks** - React state and effects manage page state, persistence, and the simulated live activity feed.
 
 ## 🚀 Service deliverable
 

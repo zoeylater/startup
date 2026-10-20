@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './app.css';
@@ -8,6 +8,46 @@ import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
 
+const STORAGE_KEY = 'tunecatcher-state-v1';
+const INITIAL_SCORES = [
+  { name: 'Jules', score: 980 },
+  { name: 'Aria', score: 950 },
+  { name: 'Maya', score: 920 },
+];
+const CHALLENGE = {
+  title: 'Daily Track Preview',
+  artist: 'SoundHelix',
+  country: 'Kenya',
+  city: 'Nairobi',
+  latitude: -1.286389,
+  longitude: 36.817223,
+  audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+};
+const LIVE_PLAYERS = ['Jules', 'Aria', 'Maya'];
+
+function isSavedState(value) {
+  const validGuess = value?.guess === null || (
+    value?.guess
+    && typeof value.guess === 'object'
+    && Number.isFinite(value.guess.latitude)
+    && Number.isFinite(value.guess.longitude)
+    && Number.isFinite(value.guess.score)
+    && Number.isFinite(value.guess.distanceKm)
+  );
+
+  return value
+    && typeof value === 'object'
+    && (typeof value.user === 'string' || value.user === null)
+    && validGuess
+    && Array.isArray(value.scores)
+    && value.scores.every((entry) => (
+      entry
+      && typeof entry.name === 'string'
+      && Number.isFinite(entry.score)
+    ))
+    && Array.isArray(value.activity)
+    && value.activity.every((entry) => typeof entry === 'string');
+}
 
 function NotFound() {
   return (
@@ -22,25 +62,78 @@ function NotFound() {
 export default function App() {
   const [user, setUser] = useState('');
   const [guess, setGuess] = useState(null);
-  const [scores, setScores] = useState([
-    { name: 'Jules', score: 980 },
-    { name: 'Aria', score: 950 },
-    { name: 'Maya', score: 920 },
-  ]);
+  const [scores, setScores] = useState(INITIAL_SCORES);
   const [activity, setActivity] = useState([
     'Daily challenge is ready to play.',
   ]);
+  const [storageReady, setStorageReady] = useState(false);
+  const [storageError, setStorageError] = useState('');
 
-  const challenge = {
-    title: 'Daily track snippet',
-    country: 'Kenya',
-    city: 'Nairobi',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  };
+  useEffect(() => {
+    try {
+      const storedValue = window.localStorage.getItem(STORAGE_KEY);
+      if (storedValue) {
+        const savedState = JSON.parse(storedValue);
+        if (!isSavedState(savedState)) {
+          throw new Error('Saved TuneCatcher data has an invalid format.');
+        }
+        setUser(savedState.user || '');
+        setGuess(savedState.guess);
+        setScores(savedState.scores);
+        setActivity(savedState.activity);
+      }
+    } catch (error) {
+      setStorageError(
+        error instanceof Error
+          ? `Could not load saved progress: ${error.message}`
+          : 'Could not load saved progress.',
+      );
+    } finally {
+      setStorageReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        user,
+        guess,
+        scores,
+        activity,
+      }));
+      setStorageError((current) => (
+        current.startsWith('Could not save progress:') ? '' : current
+      ));
+    } catch (error) {
+      setStorageError(
+        error instanceof Error
+          ? `Could not save progress: ${error.message}`
+          : 'Could not save progress.',
+      );
+    }
+  }, [storageReady, user, guess, scores, activity]);
+
+  useEffect(() => {
+    let updateIndex = 0;
+    const intervalId = window.setInterval(() => {
+      const player = LIVE_PLAYERS[updateIndex % LIVE_PLAYERS.length];
+      const score = INITIAL_SCORES[updateIndex % INITIAL_SCORES.length].score;
+      setActivity((current) => [
+        `Leaderboard update received: ${player} — ${score} points.`,
+        ...current,
+      ].slice(0, 8));
+      updateIndex += 1;
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   function handleLogin(username) {
     setUser(username);
-    setActivity((current) => [`${username} started a demo session.`, ...current].slice(0, 8));
+    setActivity((current) => [`${username} joined the challenge.`, ...current].slice(0, 8));
   }
 
   function handleLogout() {
@@ -49,23 +142,28 @@ export default function App() {
   }
 
   function handleGuessSubmission(submittedGuess) {
-    const countryMatches = submittedGuess.country.trim().toLowerCase()
-      === challenge.country.toLowerCase();
-    const cityMatches = submittedGuess.city.trim().toLowerCase()
-      === challenge.city.toLowerCase();
-    const score = countryMatches && cityMatches
-      ? 1000
-      : countryMatches
-        ? 500
-        : cityMatches
-          ? 250
-          : 0;
+    const radians = (degrees) => (degrees * Math.PI) / 180;
+    const latitudeDifference = radians(CHALLENGE.latitude - submittedGuess.latitude);
+    const longitudeDifference = radians(CHALLENGE.longitude - submittedGuess.longitude);
+    const rawHaversine = Math.sin(latitudeDifference / 2) ** 2
+      + Math.cos(radians(submittedGuess.latitude))
+      * Math.cos(radians(CHALLENGE.latitude))
+      * Math.sin(longitudeDifference / 2) ** 2;
+    const haversine = Math.min(1, Math.max(0, rawHaversine));
+    const distanceKm = 6371 * 2 * Math.atan2(
+      Math.sqrt(haversine),
+      Math.sqrt(1 - haversine),
+    );
+    const score = Math.max(0, Math.round(1000 * (1 - distanceKm / 20000)));
     const result = {
       ...submittedGuess,
       name: user || 'Guest',
       score,
-      actualCountry: challenge.country,
-      actualCity: challenge.city,
+      distanceKm: Math.round(distanceKm),
+      actualCountry: CHALLENGE.country,
+      actualCity: CHALLENGE.city,
+      actualLatitude: CHALLENGE.latitude,
+      actualLongitude: CHALLENGE.longitude,
     };
 
     setGuess(result);
@@ -84,6 +182,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="body bg-dark text-light">
+        {storageError && (
+          <p className="storage-alert" role="status">
+            {storageError} Your progress may not remain available after you leave.
+          </p>
+        )}
         <header className="site-header">
           <div className="brand-wrap">
             <span className="brand-icon" aria-hidden="true">♫</span>
@@ -118,7 +221,7 @@ export default function App() {
                 guess={guess}
                 scores={scores}
                 activity={activity}
-                challenge={challenge}
+                challenge={CHALLENGE}
                 dailyStatus={guess ? 'Round complete' : 'Round is live'}
               />
             )}
@@ -128,7 +231,7 @@ export default function App() {
             element={(
               <Guess
                 user={user}
-                challenge={challenge}
+                challenge={CHALLENGE}
                 guess={guess}
                 onSubmitGuess={handleGuessSubmission}
               />
@@ -143,7 +246,7 @@ export default function App() {
 
         <footer>
           <div className="footer-content">
-            <p className="m-0">TuneCatcher Demo</p>
+            <p className="m-0">TuneCatcher</p>
             <p className="footer-signature m-0">Created by Zoey</p>
             <a
               className="footer-github"

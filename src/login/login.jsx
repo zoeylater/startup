@@ -21,10 +21,9 @@ export default function Login({ user, onLogin }) {
     <main className="container py-4">
       <section className="card auth-card shadow-sm border-0 rounded-4">
         <div className="auth-card-inner p-3 p-md-4">
-          <h2 className="mb-3">Demo Sign In</h2>
+          <h2 className="mb-3">Sign In</h2>
           <p className="mb-0">
-            Enter a player name to personalize this session. No account or
-            password is created or stored.
+            Enter your player name to continue to today’s music challenge.
           </p>
         </div>
       </section>
@@ -49,14 +48,14 @@ export default function Login({ user, onLogin }) {
                   className="form-control"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  autoComplete="nickname"
+                  autoComplete="username"
                   maxLength={24}
                   required
                 />
               </div>
               <div className="col-12">
                 <button type="submit" className="btn btn-primary px-4">
-                  Start playing
+                  Continue
                 </button>
               </div>
             </form>

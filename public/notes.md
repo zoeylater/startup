@@ -98,3 +98,5 @@ OR::: sed -i 's/\r$//' deployFiles.sh && chmod +x deployFiles.sh && ./deployFile
 - use HTML to jsx converter !!!!!
 
 -using this as a test 
+
+-Musicbrainz could be a better API than Deezer. I could use both together but as of right now I will choose Musicbrainz
