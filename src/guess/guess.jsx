@@ -22,7 +22,7 @@ export default function Guess({ user, challenge, guess, onSubmitGuess }) {
             {user ? `Playing as ${user}. ` : ''}
             Listen to the daily track and tell us where it is from.
           </p>
-          <audio controls className="d-block w-100 mb-3">
+          <audio controls className="daily-track-player">
             <source src={challenge.audioUrl} type="audio/mpeg" />
             Your browser does not support the audio element.
           </audio>

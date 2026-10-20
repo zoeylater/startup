@@ -806,6 +806,12 @@ select {
   text-align: center;
 }
 
+.daily-track-player {
+  display: block;
+  width: min(100%, 420px);
+  margin: 0 auto 1rem;
+}
+
 .guess-map-image {
   width: 100%;
   max-width: 500px;
