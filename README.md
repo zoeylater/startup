@@ -74,7 +74,7 @@ I am going to use the required technologies in the following ways:
 
 - **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 
-- **3rd party API** - The application plans to use MusicBrainz for music recording, artist, and release metadata. The current React version uses a local MusicBrainz-shaped mock fixture and makes no API requests. The audio preview is a separate sample URL; MusicBrainz does not host preview audio.
+- **3rd party APIs** - The application plans to use MusicBrainz for recording, artist, and release metadata and Deezer for 30-second audio previews. The current React version uses local MusicBrainz- and Deezer-shaped mock data and makes no API requests. Its Deezer preview URL points to sample audio until a real Deezer track is connected.
     - Leaflet.js is planned for the interactive map in a later integration. The current frontend uses a clickable world-map image as a mock.
 
 ## 🚀 Specification Deliverable
@@ -134,10 +134,10 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 ## 🚀 React part 2: Reactivity deliverable
 
-Player progress and submitted guesses are saved in browser storage so they remain available after a reload. The leaderboard activity feed periodically receives simulated updates, the map image supports placing a guess pin, and the preview player stops playback after 30 seconds. MusicBrainz-shaped track metadata is provided by a local fixture, and the audio preview uses a separate sample URL. These provide working frontend stand-ins for the planned service, WebSocket, Leaflet, and MusicBrainz integrations.
+Player names and progress persist in browser storage; when the app is loaded on a new local calendar day, the daily guess and scores reset while the player name is retained. The leaderboard and activity feed receive simulated updates, map clicks place a guess pin and calculate distance-based scores, and the audio sample is capped at 30 seconds. MusicBrainz metadata and Deezer preview settings are local fixtures; no API calls, real account authentication, remote database, or WebSocket server are connected yet.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [X] **All functionality implemented or mocked out** - Player progress persists locally, leaderboard updates are simulated, map guesses and distance scoring work, previews are limited to 30 seconds, and MusicBrainz metadata is represented by a local mock fixture.
+- [X] **All functionality implemented or mocked out** - Player progress persists locally, daily guesses and scores reset each day, leaderboard updates are simulated, map guesses and distance scoring work, previews are limited to 30 seconds, and MusicBrainz metadata and Deezer preview configuration are represented by local mock fixtures.
 - [X] **Hooks** - React state and effects manage page state, persistence, and the simulated live activity feed.
 
 ## 🚀 Service deliverable

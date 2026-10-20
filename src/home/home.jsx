@@ -15,7 +15,7 @@ export default function Home({ user, hasPlayed }) {
             {user ? `Welcome back, ${user}! ` : ''}
             Think you can recognize a song and place it on the map? Listen to a
             song, guess where it comes from, and compete for a spot on the
-            session leaderboard.
+            daily leaderboard.
           </p>
           {hasPlayed ? (
             <Link className="btn btn-primary play-now-btn" to="/result">
@@ -53,7 +53,7 @@ export default function Home({ user, hasPlayed }) {
               <div className="step-card">
                 <div className="step-number">2</div>
                 <h3>Guess</h3>
-                <p>Enter the country and city you think the song is from.</p>
+                <p>Place a pin on the map where you think the song is from.</p>
               </div>
             </div>
 

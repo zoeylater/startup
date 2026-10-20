@@ -99,4 +99,4 @@ OR::: sed -i 's/\r$//' deployFiles.sh && chmod +x deployFiles.sh && ./deployFile
 
 -using this as a test 
 
-- Use MusicBrainz for music recording, artist, and release metadata. For now, the app uses a local MusicBrainz-shaped mock fixture and does not make API requests. Keep the audio preview as a separate sample source because MusicBrainz does not host preview audio.
+- Use MusicBrainz for recording, artist, and release metadata, and Deezer for 30-second audio previews. For now, both integrations are local mock data and do not make API requests. The Deezer-shaped preview fixture uses sample audio until a Deezer track is connected.

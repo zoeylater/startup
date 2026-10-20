@@ -1,12 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import mapImage from '../assets/map.jpg';
 
 export default function Guess({ user, challenge, guess, onSubmitGuess }) {
   const [location, setLocation] = useState(null);
-  const [previewComplete, setPreviewComplete] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
-  const audioRef = useRef(null);
   const navigate = useNavigate();
 
   function handleMapClick(event) {
@@ -47,44 +45,27 @@ export default function Guess({ user, challenge, guess, onSubmitGuess }) {
           <h2 className="mb-3">Guess the Location</h2>
           <p className="mb-3">
             {user ? `Playing as ${user}. ` : ''}
-            Listen to the 30-second preview and place a pin where you think the
-            song comes from.
-          </p>
-          <h3 className="track-title">{challenge.musicMetadata.title}</h3>
-          <p className="track-artist">
-            {challenge.musicMetadata.artist} · {challenge.musicMetadata.release}
-          </p>
-          <p className="track-source">
-            {challenge.musicMetadata.source} · Preview: {challenge.preview.source}
+            Listen to the song and place a pin where you think it comes from.
           </p>
           <audio
-            ref={audioRef}
             controls
             className="daily-track-player"
             onTimeUpdate={(event) => {
-              if (event.currentTarget.currentTime >= 30) {
-                event.currentTarget.currentTime = 30;
+              if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
+                event.currentTarget.currentTime = challenge.preview.durationSeconds;
                 event.currentTarget.pause();
-                setPreviewComplete(true);
               }
             }}
             onPlay={(event) => {
-              if (event.currentTarget.currentTime >= 30) {
+              if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
                 event.currentTarget.currentTime = 0;
-                setPreviewComplete(false);
               }
             }}
           >
             <source src={challenge.preview.url} type="audio/mpeg" />
             Your browser does not support the audio element.
           </audio>
-          <p className="preview-status" aria-live="polite">
-            {previewComplete ? 'Preview complete — play again to relisten.' : 'Preview ends after 30 seconds.'}
-          </p>
-          <p className="mb-3">
-            Click the map to place your guess. You can also focus the map and
-            press Enter to place a pin in the center.
-          </p>
+          <p className="mb-3">Click the map to place your guess.</p>
 
           <form onSubmit={handleSubmit} className="guess-form row g-3">
             <div className="col-12">

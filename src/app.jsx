@@ -9,6 +9,12 @@ import Login from './login/login';
 import Result from './result/result';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
+const CHALLENGE_DATE = (() => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${today.getFullYear()}-${month}-${day}`;
+})();
 const INITIAL_SCORES = [
   { name: 'Jules', score: 980 },
   { name: 'Aria', score: 950 },
@@ -27,7 +33,11 @@ const CHALLENGE = {
   latitude: -1.286389,
   longitude: 36.817223,
   preview: {
-    source: 'Standalone audio sample',
+    provider: 'Deezer',
+    trackId: null,
+    durationSeconds: 30,
+    isPlaceholder: true,
+    source: 'Deezer preview placeholder — sample audio, API not connected',
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   },
 };
@@ -54,7 +64,8 @@ function isSavedState(value) {
       && Number.isFinite(entry.score)
     ))
     && Array.isArray(value.activity)
-    && value.activity.every((entry) => typeof entry === 'string');
+    && value.activity.every((entry) => typeof entry === 'string')
+    && (value.date === undefined || /^\d{4}-\d{2}-\d{2}$/.test(value.date));
 }
 
 function NotFound() {
@@ -86,9 +97,15 @@ export default function App() {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
         setUser(savedState.user || '');
-        setGuess(savedState.guess);
-        setScores(savedState.scores);
-        setActivity(savedState.activity);
+        if (savedState.date && savedState.date !== CHALLENGE_DATE) {
+          setGuess(null);
+          setScores(INITIAL_SCORES);
+          setActivity(['Daily challenge is ready to play.']);
+        } else {
+          setGuess(savedState.guess);
+          setScores(savedState.scores);
+          setActivity(savedState.activity);
+        }
       }
     } catch (error) {
       setStorageError(
@@ -111,6 +128,7 @@ export default function App() {
         guess,
         scores,
         activity,
+        date: CHALLENGE_DATE,
       }));
       setStorageError((current) => (
         current.startsWith('Could not save progress:') ? '' : current
@@ -127,10 +145,20 @@ export default function App() {
   useEffect(() => {
     let updateIndex = 0;
     const intervalId = window.setInterval(() => {
-      const player = LIVE_PLAYERS[updateIndex % LIVE_PLAYERS.length];
-      const score = INITIAL_SCORES[updateIndex % INITIAL_SCORES.length].score;
+      const playerIndex = updateIndex % LIVE_PLAYERS.length;
+      const player = LIVE_PLAYERS[playerIndex];
+      const score = INITIAL_SCORES[playerIndex].score
+        + (Math.floor(updateIndex / LIVE_PLAYERS.length) + 1) * 5;
+      setScores((currentScores) => currentScores
+        .map((entry) => (
+          entry.name === player
+            ? { ...entry, score: Math.max(entry.score, score) }
+            : entry
+        ))
+        .sort((first, second) => second.score - first.score)
+        .slice(0, 5));
       setActivity((current) => [
-        `Leaderboard update received: ${player} — ${score} points.`,
+        `${player} earned ${score} points. The leaderboard was updated.`,
         ...current,
       ].slice(0, 8));
       updateIndex += 1;
@@ -147,6 +175,7 @@ export default function App() {
   function handleLogout() {
     setActivity((current) => [`${user} signed out.`, ...current].slice(0, 8));
     setUser('');
+    setGuess(null);
   }
 
   function handleGuessSubmission(submittedGuess) {
@@ -229,7 +258,6 @@ export default function App() {
                 guess={guess}
                 scores={scores}
                 activity={activity}
-                challenge={CHALLENGE}
                 dailyStatus={guess ? 'Round complete' : 'Round is live'}
               />
             )}

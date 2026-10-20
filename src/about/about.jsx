@@ -12,7 +12,6 @@ export default function About({
   guess,
   scores,
   activity,
-  challenge,
   dailyStatus,
 }) {
   const [openPanel, setOpenPanel] = useState('layout');
@@ -85,8 +84,8 @@ export default function About({
                     <dl className="about-data-list">
                       <div><dt>Player</dt><dd>{user || 'Guest'}</dd></div>
                       <div>
-                        <dt>Current song</dt>
-                        <dd>{challenge.musicMetadata.title}</dd>
+                        <dt>Challenge</dt>
+                        <dd>Daily music location</dd>
                       </div>
                       <div>
                         <dt>Map guess</dt>
