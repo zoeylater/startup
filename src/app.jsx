@@ -7,6 +7,7 @@ import Guess from './guess/guess';
 import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
+import { INITIAL_SCORES } from './config/leaderboard';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
 function getLocalDateKey() {
@@ -15,11 +16,6 @@ function getLocalDateKey() {
   const day = String(today.getDate()).padStart(2, '0');
   return `${today.getFullYear()}-${month}-${day}`;
 }
-const INITIAL_SCORES = [
-  { name: 'Jules', score: 980 },
-  { name: 'Aria', score: 950 },
-  { name: 'Maya', score: 920 },
-];
 const CHALLENGE = {
   musicMetadata: {
     source: 'MusicBrainz metadata mock',
