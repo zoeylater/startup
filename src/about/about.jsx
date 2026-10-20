@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const panels = [
   { id: 'layout', title: 'Why the Layout Works' },
@@ -16,6 +16,15 @@ export default function About({
   dailyStatus,
 }) {
   const [openPanel, setOpenPanel] = useState('layout');
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = 'About TuneCatcher';
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
 
   function togglePanel(panelId) {
     setOpenPanel((currentPanel) => currentPanel === panelId ? '' : panelId);

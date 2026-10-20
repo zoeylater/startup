@@ -453,7 +453,7 @@ input[type="submit"] {
   gap: 1.35rem;
 }
 
-details.card.accordion-item {
+.card.accordion-item {
   overflow: hidden;
   border-radius: 26px !important;
   background: linear-gradient(180deg, rgba(31, 57, 73, 0.7) 0%, rgba(20, 38, 50, 0.7) 100%);
@@ -461,19 +461,16 @@ details.card.accordion-item {
   box-shadow: 0 12px 24px rgba(2, 11, 18, 0.1);
 }
 
-details.card.accordion-item summary {
-  list-style: none;
+.accordion-toggle {
   cursor: pointer;
-  display: block;
   font-family: "Lora", serif;
   font-size: 1.45rem;
   color: #f3f9ff;
   font-weight: 600;
   text-align: center;
   padding: 0.8rem 1rem;
-  border-radius: 26px !important;
+  border-radius: 26px;
   background: rgba(255, 255, 255, 0.04);
-  margin: 0;
 }
 
 .accordion-heading {
@@ -503,10 +500,6 @@ details.card.accordion-item summary {
 .nav-session-button:focus-visible {
   outline: 3px solid #d9efff;
   outline-offset: 3px;
-}
-
-.accordion-item summary::-webkit-details-marker {
-  display: none;
 }
 
 .accordion-item.is-open .accordion-toggle {
