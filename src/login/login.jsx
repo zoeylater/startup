@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export default function Login({ user, onLogin }) {
-  const [username, setUsername] = useState(user || '');
+export default function Login({ user, initialUsername, onLogin, onLogout }) {
+  const [username, setUsername] = useState(initialUsername);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setUsername(initialUsername);
+  }, [initialUsername]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -14,7 +18,7 @@ export default function Login({ user, onLogin }) {
     }
 
     onLogin(cleanedUsername);
-    navigate('/guess');
+    navigate('/');
   }
 
   return (
@@ -22,21 +26,22 @@ export default function Login({ user, onLogin }) {
       <section className="card auth-card shadow-sm border-0 rounded-4">
         <div className="auth-card-inner p-3 p-md-4">
           <h2 className="mb-3">Sign In</h2>
-          <p className="mb-0">
-            Enter your player name to continue to today’s music challenge.
-          </p>
+          {user
+            ? <p className="mb-0">You are signed in as <strong>{user}</strong>.</p>
+            : <p className="mb-0">Enter your player name to continue to today’s music challenge.</p>}
         </div>
       </section>
 
       <section className="card auth-form-card shadow-sm border-0 rounded-4 mt-4">
         <div className="auth-form-card-inner p-3 p-md-4">
           {user ? (
-            <div>
-              <p className="mb-3">You are playing as <strong>{user}</strong>.</p>
-              <Link className="btn btn-primary px-4" to="/guess">
-                Continue to today’s challenge
-              </Link>
-            </div>
+            <button
+              type="button"
+              className="btn btn-primary px-4"
+              onClick={onLogout}
+            >
+              Sign Out
+            </button>
           ) : (
             <form onSubmit={handleSubmit} className="row g-3">
               <div className="col-12">

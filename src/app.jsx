@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './app.css';
 import About from './about/about';
@@ -74,8 +74,13 @@ function NotFound() {
   );
 }
 
+function RequireUser({ user, children }) {
+  return user ? children : <Navigate to="/login" replace />;
+}
+
 export default function App() {
   const [user, setUser] = useState('');
+  const [rememberedUser, setRememberedUser] = useState('');
   const [guess, setGuess] = useState(null);
   const [scores, setScores] = useState(INITIAL_SCORES);
   const [activity, setActivity] = useState([
@@ -94,7 +99,7 @@ export default function App() {
         if (!isSavedState(savedState)) {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
-        setUser(savedState.user || '');
+        setRememberedUser(savedState.user || '');
         setDailyDate(today);
         if (savedState.date && savedState.date !== today) {
           setGuess(null);
@@ -123,7 +128,7 @@ export default function App() {
     }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        user,
+        user: rememberedUser,
         guess,
         scores,
         activity,
@@ -139,7 +144,7 @@ export default function App() {
           : 'Could not save progress.',
       );
     }
-  }, [storageReady, user, guess, scores, activity, dailyDate]);
+  }, [storageReady, rememberedUser, guess, scores, activity, dailyDate]);
 
   useEffect(() => {
     if (!storageReady) {
@@ -194,6 +199,7 @@ export default function App() {
 
   function handleLogin(username) {
     setUser(username);
+    setRememberedUser(username);
     setActivity((current) => [`${username} joined the challenge.`, ...current].slice(0, 8));
   }
 
@@ -256,24 +262,45 @@ export default function App() {
             <span className="brand-icon brand-icon-plane" aria-hidden="true">✈</span>
           </div>
           <nav aria-label="Main navigation">
-            <Link to="/">Home</Link>
-            <Link to="/login">Login</Link>
-            <Link to="/about">About</Link>
-            <Link to="/guess">Guess</Link>
-            <Link to="/result">Result</Link>
             {user ? (
-              <button type="button" className="nav-session-button" onClick={handleLogout}>
-                Sign out ({user})
-              </button>
-            ) : null}
+              <>
+                <Link to="/">Home</Link>
+                <Link to="/login">Login</Link>
+                <Link to="/about">About</Link>
+                <Link to="/guess">Guess</Link>
+                <Link to="/result">Result</Link>
+                <button type="button" className="nav-session-button" onClick={handleLogout}>
+                  Sign out ({user})
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">Login</Link>
+                <Link to="/about">About</Link>
+              </>
+            )}
           </nav>
         </header>
 
         <Routes>
-          <Route path="/" element={<Home user={user} hasPlayed={Boolean(guess)} />} />
+          <Route
+            path="/"
+            element={(
+              <RequireUser user={user}>
+                <Home user={user} hasPlayed={Boolean(guess)} />
+              </RequireUser>
+            )}
+          />
           <Route
             path="/login"
-            element={<Login user={user} onLogin={handleLogin} />}
+            element={(
+              <Login
+                user={user}
+                initialUsername={user || rememberedUser}
+                onLogin={handleLogin}
+                onLogout={handleLogout}
+              />
+            )}
           />
           <Route
             path="/about"
@@ -289,20 +316,25 @@ export default function App() {
           />
           <Route
             path="/guess"
-            element={(
+            element={user ? (
               <Guess
                 user={user}
                 challenge={CHALLENGE}
                 guess={guess}
                 onSubmitGuess={handleGuessSubmission}
               />
-            )}
+            ) : <Navigate to="/login" replace />}
           />
           <Route
             path="/result"
-            element={<Result result={guess} scores={scores} />}
+            element={user
+              ? <Result result={guess} scores={scores} />
+              : <Navigate to="/login" replace />}
           />
-          <Route path="*" element={<NotFound />} />
+          <Route
+            path="*"
+            element={user ? <NotFound /> : <Navigate to="/login" replace />}
+          />
         </Routes>
 
         <footer>
