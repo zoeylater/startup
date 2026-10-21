@@ -1,14 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Login({ user, initialUsername, onLogin, onLogout }) {
-  const [username, setUsername] = useState(initialUsername);
+export default function Login({ user, onLogin, onLogout }) {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setUsername(initialUsername);
-  }, [initialUsername]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -58,7 +54,7 @@ export default function Login({ user, initialUsername, onLogin, onLogout }) {
                   className="form-control"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  autoComplete="username"
+                  autoComplete="off"
                   maxLength={24}
                   required
                 />

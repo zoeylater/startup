@@ -60,7 +60,11 @@ function isSavedState(value) {
 
   return value
     && typeof value === 'object'
-    && (typeof value.user === 'string' || value.user === null)
+    && (
+      value.user === undefined
+      || typeof value.user === 'string'
+      || value.user === null
+    )
     && validGuesses
     && validLegacyGuess
     && Array.isArray(value.scores)
@@ -90,7 +94,6 @@ function RequireUser({ user, children }) {
 
 export default function App() {
   const [user, setUser] = useState('');
-  const [rememberedUser, setRememberedUser] = useState('');
   const [guessesByUser, setGuessesByUser] = useState({});
   const [scores, setScores] = useState(INITIAL_SCORES);
   const [activity, setActivity] = useState([
@@ -109,7 +112,6 @@ export default function App() {
         if (!isSavedState(savedState)) {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
-        setRememberedUser(savedState.user || '');
         setDailyDate(today);
         if (savedState.date && savedState.date !== today) {
           setGuessesByUser({});
@@ -142,7 +144,6 @@ export default function App() {
     }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        user: rememberedUser,
         guesses: guessesByUser,
         scores,
         activity,
@@ -158,7 +159,7 @@ export default function App() {
           : 'Could not save progress.',
       );
     }
-  }, [storageReady, rememberedUser, guessesByUser, scores, activity, dailyDate]);
+  }, [storageReady, guessesByUser, scores, activity, dailyDate]);
 
   useEffect(() => {
     if (!storageReady) {
@@ -213,7 +214,6 @@ export default function App() {
 
   function handleLogin(username) {
     setUser(username);
-    setRememberedUser(username);
     setActivity((current) => [`${username} joined the challenge.`, ...current].slice(0, 8));
   }
 
@@ -318,7 +318,6 @@ export default function App() {
             element={(
               <Login
                 user={user}
-                initialUsername={user || rememberedUser}
                 onLogin={handleLogin}
                 onLogout={handleLogout}
               />
