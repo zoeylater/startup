@@ -810,6 +810,113 @@ select {
   margin: 0 auto 1rem;
 }
 
+.archive-card {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 0.9rem;
+  border-radius: 28px;
+}
+
+.archive-card-inner {
+  padding: 1.4rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  text-align: center;
+}
+
+.archive-calendar {
+  width: min(100%, 440px);
+  margin: 1.5rem auto;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  background: rgba(12, 31, 43, 0.35);
+}
+
+.archive-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.archive-calendar-header h3 {
+  margin: 0;
+  font-family: "Lora", serif;
+  color: #f3f9ff;
+}
+
+.archive-month-button {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0.35rem;
+  color: #f3f9ff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.archive-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.archive-weekday {
+  padding: 0.35rem 0;
+  color: var(--dark-muted);
+  font-weight: 700;
+}
+
+.archive-day {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0.2rem;
+  color: #edf8ff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.archive-day:disabled {
+  color: rgba(223, 234, 247, 0.55);
+  cursor: default;
+  opacity: 0.62;
+}
+
+.archive-day.has-archive {
+  background: rgba(111, 184, 189, 0.28);
+  border-color: var(--teal-soft);
+}
+
+.archive-day.has-archive:hover,
+.archive-day.has-archive:focus-visible {
+  background: rgba(111, 184, 189, 0.48);
+}
+
+.archive-empty-state {
+  color: var(--dark-muted);
+}
+
+.archive-selection {
+  margin: 1rem auto;
+  color: var(--dark-text);
+}
+
+.archive-selection h3 {
+  color: #f3f9ff;
+  font-family: "Lora", serif;
+}
+
+.archive-link {
+  display: inline-block;
+  width: auto;
+}
+
 .map-picker-wrap {
   width: min(100%, 720px);
   margin: 0 auto;

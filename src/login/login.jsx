@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Login({ user, initialUsername, onLogin, onLogout }) {
   const [username, setUsername] = useState(initialUsername);
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,8 +17,12 @@ export default function Login({ user, initialUsername, onLogin, onLogout }) {
     if (!cleanedUsername) {
       return;
     }
+    if (!password.trim()) {
+      return;
+    }
 
     onLogin(cleanedUsername);
+    setPassword('');
     navigate('/');
   }
 
@@ -45,7 +50,7 @@ export default function Login({ user, initialUsername, onLogin, onLogout }) {
           ) : (
             <form onSubmit={handleSubmit} className="row g-3">
               <div className="col-12">
-                <label htmlFor="username" className="form-label">Player name</label>
+                <label htmlFor="username" className="form-label">Username</label>
                 <input
                   id="username"
                   type="text"
@@ -55,6 +60,19 @@ export default function Login({ user, initialUsername, onLogin, onLogout }) {
                   onChange={(event) => setUsername(event.target.value)}
                   autoComplete="username"
                   maxLength={24}
+                  required
+                />
+              </div>
+              <div className="col-12">
+                <label htmlFor="password" className="form-label">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  className="form-control"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
                   required
                 />
               </div>

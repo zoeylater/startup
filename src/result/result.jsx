@@ -44,6 +44,9 @@ export default function Result({ result, scores }) {
               <Link className="btn btn-primary" to="/guess">Make a guess</Link>
             </>
           )}
+          <Link className="btn btn-secondary archive-link mt-3" to="/archives">
+            From the Archives
+          </Link>
         </div>
       </section>
 
@@ -66,9 +69,6 @@ export default function Result({ result, scores }) {
             )) : <li>No scores yet</li>}
           </ol>
         )}
-        <p className="result-note mb-0">
-          The leaderboard updates as players submit their guesses.
-        </p>
       </aside>
     </main>
   );

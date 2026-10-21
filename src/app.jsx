@@ -7,6 +7,7 @@ import Guess from './guess/guess';
 import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
+import Archive from './archive/archive';
 import { INITIAL_SCORES } from './config/leaderboard';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
@@ -329,6 +330,12 @@ export default function App() {
             path="/result"
             element={user
               ? <Result result={guess} scores={scores} />
+              : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/archives"
+            element={user
+              ? <Archive archives={[]} />
               : <Navigate to="/login" replace />}
           />
           <Route
