@@ -37,7 +37,7 @@ export default function Result({ result, scores }) {
                 You were approximately {result.distanceKm.toLocaleString()} km
                 from the correct location.
               </p>
-              <Link className="btn btn-primary mt-3" to="/guess">Play again</Link>
+              <Link className="btn btn-primary mt-3" to="/">Back to Home</Link>
             </>
           ) : (
             <>

@@ -41,19 +41,28 @@ const CHALLENGE = {
 const LIVE_PLAYERS = ['Jules', 'Aria', 'Maya'];
 
 function isSavedState(value) {
-  const validGuess = value?.guess === null || (
-    value?.guess
-    && typeof value.guess === 'object'
-    && Number.isFinite(value.guess.latitude)
-    && Number.isFinite(value.guess.longitude)
-    && Number.isFinite(value.guess.score)
-    && Number.isFinite(value.guess.distanceKm)
+  const isValidGuess = (guess) => (
+    guess
+    && typeof guess === 'object'
+    && Number.isFinite(guess.latitude)
+    && Number.isFinite(guess.longitude)
+    && Number.isFinite(guess.score)
+    && Number.isFinite(guess.distanceKm)
   );
+  const validGuesses = value?.guesses === undefined || (
+    value.guesses
+    && typeof value.guesses === 'object'
+    && Object.values(value.guesses).every(isValidGuess)
+  );
+  const validLegacyGuess = value?.guess === undefined
+    || value.guess === null
+    || isValidGuess(value.guess);
 
   return value
     && typeof value === 'object'
     && (typeof value.user === 'string' || value.user === null)
-    && validGuess
+    && validGuesses
+    && validLegacyGuess
     && Array.isArray(value.scores)
     && value.scores.every((entry) => (
       entry
@@ -82,7 +91,7 @@ function RequireUser({ user, children }) {
 export default function App() {
   const [user, setUser] = useState('');
   const [rememberedUser, setRememberedUser] = useState('');
-  const [guess, setGuess] = useState(null);
+  const [guessesByUser, setGuessesByUser] = useState({});
   const [scores, setScores] = useState(INITIAL_SCORES);
   const [activity, setActivity] = useState([
     'Daily challenge is ready to play.',
@@ -103,11 +112,15 @@ export default function App() {
         setRememberedUser(savedState.user || '');
         setDailyDate(today);
         if (savedState.date && savedState.date !== today) {
-          setGuess(null);
+          setGuessesByUser({});
           setScores(INITIAL_SCORES);
           setActivity(['Daily challenge is ready to play.']);
         } else {
-          setGuess(savedState.guess);
+          const savedGuesses = savedState.guesses
+            || (savedState.user && savedState.guess
+              ? { [savedState.user]: savedState.guess }
+              : {});
+          setGuessesByUser(savedGuesses);
           setScores(savedState.scores);
           setActivity(savedState.activity);
         }
@@ -130,7 +143,7 @@ export default function App() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
         user: rememberedUser,
-        guess,
+        guesses: guessesByUser,
         scores,
         activity,
         date: dailyDate,
@@ -145,7 +158,7 @@ export default function App() {
           : 'Could not save progress.',
       );
     }
-  }, [storageReady, rememberedUser, guess, scores, activity, dailyDate]);
+  }, [storageReady, rememberedUser, guessesByUser, scores, activity, dailyDate]);
 
   useEffect(() => {
     if (!storageReady) {
@@ -156,7 +169,7 @@ export default function App() {
       const today = getLocalDateKey();
       if (today !== dailyDate) {
         setDailyDate(today);
-        setGuess(null);
+        setGuessesByUser({});
         setScores(INITIAL_SCORES);
         setActivity(['Daily challenge is ready to play.']);
       }
@@ -207,10 +220,13 @@ export default function App() {
   function handleLogout() {
     setActivity((current) => [`${user} signed out.`, ...current].slice(0, 8));
     setUser('');
-    setGuess(null);
   }
 
   function handleGuessSubmission(submittedGuess) {
+    if (!user || guessesByUser[user]) {
+      return;
+    }
+
     const radians = (degrees) => (degrees * Math.PI) / 180;
     const latitudeDifference = radians(CHALLENGE.latitude - submittedGuess.latitude);
     const longitudeDifference = radians(CHALLENGE.longitude - submittedGuess.longitude);
@@ -235,7 +251,10 @@ export default function App() {
       actualLongitude: CHALLENGE.longitude,
     };
 
-    setGuess(result);
+    setGuessesByUser((current) => ({
+      ...current,
+      [user]: result,
+    }));
     setScores((currentScores) => {
       const previousBest = currentScores.find((entry) => entry.name === result.name)?.score ?? 0;
       const bestScores = currentScores.filter((entry) => entry.name !== result.name);
@@ -247,6 +266,8 @@ export default function App() {
       ...current,
     ].slice(0, 8));
   }
+
+  const guess = user ? guessesByUser[user] || null : null;
 
   return (
     <BrowserRouter>

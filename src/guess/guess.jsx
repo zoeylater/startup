@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import mapImage from '../assets/map.jpg';
 
 export default function Guess({ user, challenge, guess, onSubmitGuess }) {
@@ -65,54 +65,57 @@ export default function Guess({ user, challenge, guess, onSubmitGuess }) {
             <source src={challenge.preview.url} type="audio/mpeg" />
             Your browser does not support the audio element.
           </audio>
-          <p className="mb-3">Click the map to place your guess.</p>
+          {guess ? (
+            <div className="guess-complete-message">
+              <p>You’ve already submitted today’s guess.</p>
+              <Link className="btn btn-primary" to="/result">View Today’s Results</Link>
+            </div>
+          ) : (
+            <>
+              <p className="mb-3">Click the map to place your guess.</p>
 
-          <form onSubmit={handleSubmit} className="guess-form row g-3">
-            <div className="col-12">
-              <div className="map-picker-wrap">
-                <button
-                  type="button"
-                  className="map-picker"
-                  aria-label="Choose your guess location on the world map"
-                  onClick={handleMapClick}
-                >
-                  <img
-                    src={mapImage}
-                    alt="World map. Click to choose a location."
-                    className="guess-map-image"
-                  />
-                  {location && (
-                    <span
-                      className="map-pin"
-                      aria-hidden="true"
-                      style={{ left: `${location.xPercent}%`, top: `${location.yPercent}%` }}
-                    />
+              <form onSubmit={handleSubmit} className="guess-form row g-3">
+                <div className="col-12">
+                  <div className="map-picker-wrap">
+                    <button
+                      type="button"
+                      className="map-picker"
+                      aria-label="Choose your guess location on the world map"
+                      onClick={handleMapClick}
+                    >
+                      <img
+                        src={mapImage}
+                        alt="World map. Click to choose a location."
+                        className="guess-map-image"
+                      />
+                      {location && (
+                        <span
+                          className="map-pin"
+                          aria-hidden="true"
+                          style={{ left: `${location.xPercent}%`, top: `${location.yPercent}%` }}
+                        />
+                      )}
+                    </button>
+                    <p className="map-location" aria-live="polite">
+                      {location
+                        ? `Selected: ${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`
+                        : 'No location selected'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="col-12">
+                  {validationMessage && (
+                    <p className="form-validation-message" role="alert">
+                      {validationMessage}
+                    </p>
                   )}
-                </button>
-                <p className="map-location" aria-live="polite">
-                  {location
-                    ? `Selected: ${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`
-                    : 'No location selected'}
-                </p>
-              </div>
-            </div>
-
-            <div className="col-12">
-              {validationMessage && (
-                <p className="form-validation-message" role="alert">
-                  {validationMessage}
-                </p>
-              )}
-              <button type="submit" className="btn btn-primary px-4">
-                {guess ? 'Submit New Guess' : 'Submit Guess'}
-              </button>
-            </div>
-          </form>
-
-          {guess && (
-            <p className="mb-0" aria-live="polite">
-              Your last guess scored {guess.score} points.
-            </p>
+                  <button type="submit" className="btn btn-primary px-4">
+                    Submit Guess
+                  </button>
+                </div>
+              </form>
+            </>
           )}
         </div>
       </section>

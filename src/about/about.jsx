@@ -14,7 +14,7 @@ export default function About({
   activity,
   dailyStatus,
 }) {
-  const [openPanel, setOpenPanel] = useState('layout');
+  const [openPanel, setOpenPanel] = useState('');
 
   useEffect(() => {
     const previousTitle = document.title;
