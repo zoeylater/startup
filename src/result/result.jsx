@@ -10,7 +10,9 @@ export default function Result({ result, scores }) {
         <div className="result-inner-panel p-3 p-md-4">
           {result ? (
             <>
-              <p className="result-badge">{result.score >= 500 ? 'Nice!' : 'Thanks for playing!'}</p>
+              <p className={`result-badge${result.score >= 500 ? '' : ' result-badge-thanks'}`}>
+                {result.score >= 500 ? 'Nice!' : 'Thanks for playing!'}
+              </p>
               <p className="result-subtitle">Here are your results:</p>
 
               <div className="result-stats row g-3">

@@ -42,7 +42,7 @@ export default function Archive({ archives = [] }) {
     <main className="container py-4">
       <section className="card archive-card shadow-sm border-0 rounded-4">
         <div className="archive-card-inner p-3 p-md-4">
-          <h2 className="mb-3">From the Archives</h2>
+          <h2 className="archive-title mb-3">From the Archives</h2>
           <p>Choose a date to revisit a past daily challenge.</p>
 
           <div
@@ -113,7 +113,9 @@ export default function Archive({ archives = [] }) {
             </p>
           )}
 
-          <Link className="btn btn-primary mt-3" to="/result">Back to Results</Link>
+          <Link className="btn btn-primary archive-back-link mt-3" to="/result">
+            Back to Results
+          </Link>
         </div>
       </section>
     </main>

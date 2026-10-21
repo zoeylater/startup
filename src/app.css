@@ -649,6 +649,11 @@ select {
   animation: niceFloat 2.8s ease-in-out infinite alternate;
 }
 
+.result-badge-thanks {
+  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+  letter-spacing: 0.01em;
+}
+
 .result-badge::after {
   content: "";
   position: absolute;
@@ -825,6 +830,38 @@ select {
   text-align: center;
 }
 
+.archive-title {
+  position: relative;
+  display: inline-block;
+  color: #f3f9ff;
+  transition: color 200ms ease, transform 200ms ease, text-shadow 200ms ease;
+}
+
+.archive-title::after {
+  position: absolute;
+  left: 50%;
+  width: 84%;
+  bottom: -0.3rem;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal-soft), #d9b46a);
+  content: "";
+  opacity: 0;
+  transform: translateX(-50%) scaleX(0);
+  transition: opacity 180ms ease, transform 220ms ease;
+}
+
+.archive-title:hover {
+  color: #ffffff;
+  transform: translateY(-2px);
+  text-shadow: 0 6px 18px rgba(111, 184, 189, 0.38);
+}
+
+.archive-title:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scaleX(1);
+}
+
 .archive-calendar {
   width: min(100%, 440px);
   margin: 1.5rem auto;
@@ -832,6 +869,23 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 18px;
   background: rgba(12, 31, 43, 0.35);
+  box-shadow: 0 14px 28px rgba(2, 11, 18, 0.2);
+  animation: archiveCalendarArrive 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes archiveCalendarArrive {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) rotateX(-8deg) scale(0.96);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-3px) rotateX(2deg) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0) scale(1);
+  }
 }
 
 .archive-calendar-header {
@@ -915,6 +969,13 @@ select {
 .archive-link {
   display: inline-block;
   width: auto;
+}
+
+.archive-back-link {
+  display: inline-block;
+  width: auto;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.95rem;
 }
 
 .map-picker-wrap {
@@ -1505,8 +1566,23 @@ footer .footer-content {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-copy,
-  .how-it-works {
+  .how-it-works,
+  .archive-calendar,
+  .archive-title,
+  .archive-title::after {
     transition: none;
+    animation: none;
+  }
+
+  .archive-title:hover {
+    transform: none;
+    text-shadow: none;
+  }
+
+  .archive-title::after,
+  .archive-title:hover::after {
+    opacity: 0;
+    transform: translateX(-50%) scaleX(0);
   }
 
   .hero-copy:hover,
