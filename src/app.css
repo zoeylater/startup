@@ -1010,6 +1010,14 @@ select {
   font-family: "Lora", serif;
 }
 
+.archive-result-score {
+  font-size: 1.15rem;
+}
+
+.archive-result-score strong {
+  color: #9fe0a5;
+}
+
 .archive-link {
   display: inline-block;
   width: auto;

@@ -8,7 +8,7 @@ import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
 import Archive from './archive/archive';
-import { fetchDailyTrack } from './music/dailyTrack';
+import { fetchArchiveTrack, fetchDailyTrack } from './music/dailyTrack';
 import { getDisplayName } from './utils/displayName';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
@@ -24,6 +24,30 @@ const DAILY_LOCATION = {
   latitude: -1.286389,
   longitude: 36.817223,
 };
+function calculateGuessResult(submittedGuess, location, details) {
+  const radians = (degrees) => (degrees * Math.PI) / 180;
+  const latitudeDifference = radians(location.latitude - submittedGuess.latitude);
+  const longitudeDifference = radians(location.longitude - submittedGuess.longitude);
+  const rawHaversine = Math.sin(latitudeDifference / 2) ** 2
+    + Math.cos(radians(submittedGuess.latitude))
+    * Math.cos(radians(location.latitude))
+    * Math.sin(longitudeDifference / 2) ** 2;
+  const haversine = Math.min(1, Math.max(0, rawHaversine));
+  const distanceKm = 6371 * 2 * Math.atan2(
+    Math.sqrt(haversine),
+    Math.sqrt(1 - haversine),
+  );
+  return {
+    ...submittedGuess,
+    score: Math.max(0, Math.round(1000 * (1 - distanceKm / 20000))),
+    distanceKm: Math.round(distanceKm),
+    actualCountry: details.country,
+    actualCity: details.city,
+    actualLatitude: location.latitude,
+    actualLongitude: location.longitude,
+  };
+}
+
 function isSavedState(value) {
   const isValidGuess = (guess) => (
     guess
@@ -41,6 +65,15 @@ function isSavedState(value) {
   const validLegacyGuess = value?.guess === undefined
     || value.guess === null
     || isValidGuess(value.guess);
+  const validArchiveGuesses = value?.archiveGuesses === undefined || (
+    value.archiveGuesses
+    && typeof value.archiveGuesses === 'object'
+    && Object.values(value.archiveGuesses).every((userGuesses) => (
+      userGuesses
+      && typeof userGuesses === 'object'
+      && Object.values(userGuesses).every(isValidGuess)
+    ))
+  );
 
   return value
     && typeof value === 'object'
@@ -51,6 +84,7 @@ function isSavedState(value) {
     )
     && validGuesses
     && validLegacyGuess
+    && validArchiveGuesses
     && (value.scores === undefined || (
       Array.isArray(value.scores)
       && value.scores.every((entry) => (
@@ -85,6 +119,9 @@ export default function App() {
     preview: null,
     previewError: '',
   });
+  const [archiveChallenge, setArchiveChallenge] = useState(null);
+  const [archiveTrack, setArchiveTrack] = useState(null);
+  const [archiveGuessesByUser, setArchiveGuessesByUser] = useState({});
   const [guessesByUser, setGuessesByUser] = useState({});
   const [scores, setScores] = useState([]);
   const [activity, setActivity] = useState([
@@ -113,6 +150,45 @@ export default function App() {
 
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!archiveChallenge) {
+      setArchiveTrack(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setArchiveTrack({
+      musicMetadata: {
+        source: 'Archive',
+        title: archiveChallenge.title,
+        artist: archiveChallenge.artist,
+        release: '',
+      },
+      preview: null,
+      previewError: 'Loading archive song preview…',
+    });
+    fetchArchiveTrack(archiveChallenge, controller.signal)
+      .then(setArchiveTrack)
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setArchiveTrack({
+            musicMetadata: {
+              source: 'Archive',
+              title: archiveChallenge.title,
+              artist: archiveChallenge.artist,
+              release: '',
+            },
+            preview: null,
+            previewError: error instanceof Error
+              ? error.message
+              : 'Could not load archive song preview.',
+          });
+        }
+      });
+
+    return () => controller.abort();
+  }, [archiveChallenge]);
 
   async function refreshScores() {
     const response = await fetch('/api/scores');
@@ -171,6 +247,7 @@ export default function App() {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
         setDailyDate(today);
+        setArchiveGuessesByUser(savedState.archiveGuesses || {});
         if (savedState.date && savedState.date !== today) {
           setGuessesByUser({});
           setActivity(['Daily challenge is ready to play.']);
@@ -201,6 +278,7 @@ export default function App() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
         guesses: guessesByUser,
+        archiveGuesses: archiveGuessesByUser,
         activity,
         date: dailyDate,
       }));
@@ -214,7 +292,7 @@ export default function App() {
           : 'Could not save progress.',
       );
     }
-  }, [storageReady, guessesByUser, activity, dailyDate]);
+  }, [storageReady, guessesByUser, archiveGuessesByUser, activity, dailyDate]);
 
   useEffect(() => {
     if (!storageReady) {
@@ -278,32 +356,51 @@ export default function App() {
   }
 
   async function handleGuessSubmission(submittedGuess) {
-    if (!user || guessesByUser[user]) {
-      return;
+    if (archiveChallenge) {
+      if (!user || archiveGuessesByUser[user]?.[archiveChallenge.date]) {
+        return false;
+      }
+
+      const target = {
+        latitude: archiveChallenge.latitude,
+        longitude: archiveChallenge.longitude,
+      };
+      if (!Number.isFinite(target.latitude) || !Number.isFinite(target.longitude)) {
+        setServiceError('This archive challenge does not have a target location yet.');
+        return false;
+      }
+
+      const result = calculateGuessResult(submittedGuess, target, {
+        country: archiveChallenge.country,
+        city: archiveChallenge.city,
+      });
+      setArchiveGuessesByUser((current) => ({
+        ...current,
+        [user]: {
+          ...current[user],
+          [archiveChallenge.date]: {
+            ...result,
+            musicMetadata: archiveTrack?.musicMetadata || {
+              source: 'Archive',
+              title: archiveChallenge.title,
+              artist: archiveChallenge.artist,
+              release: '',
+            },
+            previewTrackUrl: archiveTrack?.preview?.trackUrl,
+            albumCover: archiveTrack?.preview?.albumCover || archiveChallenge.albumCover,
+          },
+        },
+      }));
+      return true;
     }
 
-    const radians = (degrees) => (degrees * Math.PI) / 180;
-    const latitudeDifference = radians(DAILY_LOCATION.latitude - submittedGuess.latitude);
-    const longitudeDifference = radians(DAILY_LOCATION.longitude - submittedGuess.longitude);
-    const rawHaversine = Math.sin(latitudeDifference / 2) ** 2
-      + Math.cos(radians(submittedGuess.latitude))
-      * Math.cos(radians(DAILY_LOCATION.latitude))
-      * Math.sin(longitudeDifference / 2) ** 2;
-    const haversine = Math.min(1, Math.max(0, rawHaversine));
-    const distanceKm = 6371 * 2 * Math.atan2(
-      Math.sqrt(haversine),
-      Math.sqrt(1 - haversine),
-    );
-    const score = Math.max(0, Math.round(1000 * (1 - distanceKm / 20000)));
+    if (!user || guessesByUser[user]) {
+      return false;
+    }
+
     const result = {
-      ...submittedGuess,
+      ...calculateGuessResult(submittedGuess, DAILY_LOCATION, DAILY_LOCATION),
       name: user || 'Guest',
-      score,
-      distanceKm: Math.round(distanceKm),
-      actualCountry: DAILY_LOCATION.country,
-      actualCity: DAILY_LOCATION.city,
-      actualLatitude: DAILY_LOCATION.latitude,
-      actualLongitude: DAILY_LOCATION.longitude,
       musicMetadata: dailyTrack.musicMetadata,
       previewTrackUrl: dailyTrack.preview?.trackUrl,
       albumCover: dailyTrack.preview?.albumCover,
@@ -313,7 +410,7 @@ export default function App() {
       const response = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ score }),
+        body: JSON.stringify({ score: result.score }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -326,7 +423,7 @@ export default function App() {
       setServiceError('');
     } catch (error) {
       setServiceError(error instanceof Error ? error.message : 'Could not submit your score.');
-      return;
+      return false;
     }
 
     setGuessesByUser((current) => ({
@@ -334,12 +431,26 @@ export default function App() {
       [user]: result,
     }));
     setActivity((current) => [
-      `${result.name} submitted a guess and scored ${score} points.`,
+      `${result.name} submitted a guess and scored ${result.score} points.`,
       ...current,
     ].slice(0, 8));
+    return true;
   }
 
   const guess = user ? guessesByUser[user] || null : null;
+  const archiveGuesses = user ? archiveGuessesByUser[user] || {} : {};
+  const challenge = archiveChallenge
+    ? archiveTrack || {
+      musicMetadata: {
+        source: 'Archive',
+        title: archiveChallenge.title,
+        artist: archiveChallenge.artist,
+        release: '',
+      },
+      preview: null,
+      previewError: 'Loading archive song preview…',
+    }
+    : dailyTrack;
 
   return (
     <BrowserRouter>
@@ -414,9 +525,11 @@ export default function App() {
             element={user ? (
               <Guess
                 user={user}
-                challenge={dailyTrack}
-                trackError={dailyTrack.previewError}
-                guess={guess}
+                challenge={challenge}
+                challengeDate={archiveChallenge?.date}
+                trackError={challenge.previewError}
+                guess={archiveChallenge ? null : guess}
+                isArchiveChallenge={Boolean(archiveChallenge)}
                 onSubmitGuess={handleGuessSubmission}
               />
             ) : <Navigate to="/login" replace />}
@@ -428,9 +541,30 @@ export default function App() {
               : <Navigate to="/login" replace />}
           />
           <Route
+            path="/archive-result"
+            element={user && archiveChallenge ? (
+              <Result
+                result={archiveGuesses[archiveChallenge.date] || null}
+                isArchiveResult
+                challengeDate={archiveChallenge.date}
+                scores={[]}
+              />
+            ) : <Navigate to="/archives" replace />}
+          />
+          <Route
             path="/archives"
             element={user
-              ? <Archive />
+              ? <Archive
+                playedChallenges={archiveGuesses}
+                onPlayArchive={(archive) => {
+                  setArchiveChallenge(archive);
+                  setServiceError('');
+                }}
+                onViewArchiveResult={(archive) => {
+                  setArchiveChallenge(archive);
+                  setServiceError('');
+                }}
+              />
               : <Navigate to="/login" replace />}
           />
           <Route

@@ -9,6 +9,36 @@ const users = [];
 let scores = [];
 const archives = [
   {
+    date: '2026-11-01',
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+    city: 'Scarborough',
+    country: 'Canada',
+    latitude: 43.7764,
+    longitude: -79.2318,
+    albumCover: 'https://cdn-images.dzcdn.net/images/cover/fd00ebd6d30d7253f813dba3bb1c66a9/250x250-000000-80-0-0.jpg',
+  },
+  {
+    date: '2026-11-02',
+    title: "Hips Don't Lie",
+    artist: 'Shakira',
+    city: 'Barranquilla',
+    country: 'Colombia',
+    latitude: 10.9639,
+    longitude: -74.7964,
+    albumCover: 'https://cdn-images.dzcdn.net/images/cover/b570890728621ec68d5c5558164c3945/250x250-000000-80-0-0.jpg',
+  },
+  {
+    date: '2026-11-03',
+    title: 'Shape of You',
+    artist: 'Ed Sheeran',
+    city: 'Halifax',
+    country: 'United Kingdom',
+    latitude: 53.721,
+    longitude: -1.858,
+    albumCover: 'https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/250x250-000000-80-0-0.jpg',
+  },
+  {
     date: '2026-11-04',
     title: 'Suzanna',
     artist: 'Sauti Sol',
@@ -70,27 +100,6 @@ app.get('/api/archives', verifyAuth, (req, res) => {
   }
 
   res.send(archives.filter((archive) => archive.date >= start && archive.date <= end));
-});
-
-app.get('/api/archives', verifyAuth, async (req, res, next) => {
-  if (!archivesCollection) {
-    return res.status(503).send({ msg: 'Archive storage is not configured' });
-  }
-
-  const { start, end } = req.query;
-  if (!isDateKey(start) || !isDateKey(end) || start > end) {
-    return res.status(400).send({ msg: 'Valid start and end dates are required' });
-  }
-
-  try {
-    const archives = await archivesCollection.find(
-      { date: { $gte: start, $lte: end } },
-      { projection: { _id: 0 } },
-    ).sort({ date: 1 }).toArray();
-    res.send(archives);
-  } catch (error) {
-    next(error);
-  }
 });
 
 app.get('/api/music/deezer/search', async (req, res, next) => {

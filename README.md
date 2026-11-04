@@ -70,7 +70,7 @@ I am going to use the required technologies in the following ways:
     - Submitting a guess
     - Calculating the score based on distance from the actual location of the song
 
-- **DB/Login** - Authentication, leaderboard, and archive data are currently stored in service memory and reset when the service restarts. MongoDB will be integrated in the database deliverable to persist user accounts, game history, and archive challenges.
+- **DB/Login** - Authentication, leaderboard, and archive data are currently stored in service memory and reset when the service restarts. MongoDB will be integrated in the database deliverable to persist user accounts, game history, and archive challenges. The in-memory archive currently contains challenges for Nov 1–4, 2026; its locations are the artists' recorded origin areas from MusicBrainz, not necessarily where a song was recorded, and its cover art comes from Deezer.
 
 - **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 

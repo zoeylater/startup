@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDisplayName } from '../utils/displayName';
 
-export default function Result({ result, scores, dailyTrack }) {
+export default function Result({
+  result,
+  scores,
+  dailyTrack,
+  isArchiveResult = false,
+  challengeDate,
+}) {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const albumCover = result?.albumCover || dailyTrack?.preview?.albumCover;
   const musicMetadata = result?.musicMetadata || dailyTrack?.musicMetadata;
@@ -16,7 +22,11 @@ export default function Result({ result, scores, dailyTrack }) {
               <p className={`result-badge${result.score >= 500 ? '' : ' result-badge-thanks'}`}>
                 {result.score >= 500 ? 'Nice!' : 'Thanks for playing!'}
               </p>
-              <p className="result-subtitle">Here are your results:</p>
+              <p className="result-subtitle">
+                {isArchiveResult && challengeDate
+                  ? `Archive challenge · ${new Date(`${challengeDate}T00:00:00`).toLocaleDateString()}`
+                  : 'Here are your results:'}
+              </p>
 
               <div className="result-stats row g-3">
                 <div className="result-metric col-12 col-md-4">
@@ -53,7 +63,12 @@ export default function Result({ result, scores, dailyTrack }) {
                   <span>by {musicMetadata.artist}</span>
                 </p>
               )}
-              <Link className="btn btn-primary mt-3" to="/">Back to Home</Link>
+              <Link
+                className="btn btn-primary mt-3"
+                to={isArchiveResult ? '/archives' : '/'}
+              >
+                {isArchiveResult ? 'Back to Archives' : 'Back to Home'}
+              </Link>
             </>
           ) : (
             <>
@@ -62,32 +77,36 @@ export default function Result({ result, scores, dailyTrack }) {
               <Link className="btn btn-primary" to="/guess">Make a guess</Link>
             </>
           )}
-          <Link className="btn btn-secondary archive-link mt-3" to="/archives">
-            From the Archives
-          </Link>
+          {!isArchiveResult && (
+            <Link className="btn btn-secondary archive-link mt-3" to="/archives">
+              From the Archives
+            </Link>
+          )}
         </div>
       </section>
 
-      <aside className="result-board-card shadow-sm border-0 rounded-4 mt-4">
-        <h3>Top scores</h3>
-        <button
-          type="button"
-          className="leaderboard-toggle"
-          aria-expanded={showLeaderboard}
-          onClick={() => setShowLeaderboard((showing) => !showing)}
-        >
-          {showLeaderboard ? 'Hide leaderboard' : 'Show leaderboard'}
-        </button>
-        {showLeaderboard && (
-          <ol className="score-list">
-            {scores.length > 0 ? scores.map((entry, index) => (
-              <li key={`${entry.name}-${index}`}>
-                <span>{getDisplayName(entry.name)}</span><strong>{entry.score}</strong>
-              </li>
-            )) : <li>No scores yet</li>}
-          </ol>
-        )}
-      </aside>
+      {!isArchiveResult && (
+        <aside className="result-board-card shadow-sm border-0 rounded-4 mt-4">
+          <h3>Top scores</h3>
+          <button
+            type="button"
+            className="leaderboard-toggle"
+            aria-expanded={showLeaderboard}
+            onClick={() => setShowLeaderboard((showing) => !showing)}
+          >
+            {showLeaderboard ? 'Hide leaderboard' : 'Show leaderboard'}
+          </button>
+          {showLeaderboard && (
+            <ol className="score-list">
+              {scores.length > 0 ? scores.map((entry, index) => (
+                <li key={`${entry.name}-${index}`}>
+                  <span>{getDisplayName(entry.name)}</span><strong>{entry.score}</strong>
+                </li>
+              )) : <li>No scores yet</li>}
+            </ol>
+          )}
+        </aside>
+      )}
     </main>
   );
 }
