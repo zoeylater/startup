@@ -145,13 +145,13 @@ Daily guesses and scores persist in browser storage, with each username's guess 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [X] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [ ] **Node.js/Express HTTP service** - I did not complete this part of the deliverable.
-- [ ] **Static middleware for frontend** - I did not complete this part of the deliverable.
-- [ ] **Calls to third party endpoints** - I did not complete this part of the deliverable.
-- [ ] **Backend service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Frontend calls service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Supports registration, login, logout, and restricted endpoint** - I did not complete this part of the deliverable.
-- [ ] **Uses BCrypt to hash passwords** - I did not complete this part of the deliverable.
+- [X] **Node.js/Express HTTP service** - I completed this part of the deliverable.
+- [X] **Static middleware for frontend** - Express serves the built Vite frontend from `dist`, serves public assets, and falls back to the app entry point for client-side routes. Run `npm run build` before starting the service.
+- [X] **Calls to third party endpoints** - The service calls Deezer, MusicBrainz, and OpenStreetMap Nominatim.
+- [X] **Backend service endpoints** - The service provides authentication, user, daily challenge, archive, location, and score endpoints.
+- [X] **Frontend calls service endpoints** - The frontend uses the service for authentication, challenges, archives, scores, and location lookup.
+- [X] **Supports registration, login, logout, and restricted endpoint** - Authentication endpoints and protected user and challenge endpoints are implemented.
+- [X] **Uses BCrypt to hash passwords** - Passwords are hashed and verified with `bcryptjs`.
 
 ## 🚀 DB deliverable
 

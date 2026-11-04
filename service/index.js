@@ -8,6 +8,9 @@ const path = require('node:path');
 const app = express();
 const authCookieName = 'token';
 const users = [];
+const frontendBuildPath = path.join(__dirname, '..', 'dist');
+const frontendIndexPath = path.join(frontendBuildPath, 'index.html');
+const publicAssetsPath = path.join(__dirname, '..', 'public');
 const userStorePath = path.join(__dirname, 'data', 'users.json');
 const scoreStorePath = path.join(__dirname, 'data', 'scores.json');
 const dailyChallengeStorePath = path.join(__dirname, 'data', 'daily-challenges.json');
@@ -66,7 +69,6 @@ const archives = [
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static('public'));
 
 app.post('/api/auth/create', async (req, res) => {
   const { email, password } = req.body;
@@ -277,6 +279,23 @@ app.post('/api/score', verifyAuth, async (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.send({ status: 'ok' });
+});
+
+app.use(express.static(frontendBuildPath));
+app.use(express.static(publicAssetsPath));
+app.use((req, res, next) => {
+  if (
+    req.method !== 'GET'
+    || req.path === '/api'
+    || req.path.startsWith('/api/')
+  ) {
+    return next();
+  }
+  res.sendFile(frontendIndexPath, (error) => {
+    if (error) {
+      next(error);
+    }
+  });
 });
 
 async function createUser(email, password) {
