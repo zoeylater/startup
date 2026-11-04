@@ -2,11 +2,20 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const uuid = require('uuid');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
 const app = express();
 const authCookieName = 'token';
 const users = [];
+const userStorePath = path.join(__dirname, 'data', 'users.json');
+const scoreStorePath = path.join(__dirname, 'data', 'scores.json');
+let userWriteQueue = Promise.resolve();
 let scores = [];
+let scoreStoreDate = getMountainDateKey();
+const reverseGeocodeCache = new Map();
+let nominatimRequestQueue = Promise.resolve();
+let lastNominatimRequestAt = 0;
 const archives = [
   {
     date: '2026-11-01',
@@ -63,9 +72,14 @@ app.post('/api/auth/create', async (req, res) => {
     return res.status(409).send({ msg: 'Existing user' });
   }
 
-  const user = await createUser(email, password);
-  setAuthCookie(res, user.token);
-  res.send({ email: user.email });
+  try {
+    const user = await createUser(email, password);
+    setAuthCookie(res, user.token);
+    res.send({ email: user.email });
+  } catch (error) {
+    console.error('Unable to save the new user account:', error);
+    res.status(500).send({ msg: 'Could not save your account. Please try again.' });
+  }
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -102,6 +116,59 @@ app.get('/api/archives', verifyAuth, (req, res) => {
   res.send(archives.filter((archive) => archive.date >= start && archive.date <= end));
 });
 
+app.get('/api/location/reverse', verifyAuth, async (req, res, next) => {
+  const latitude = Number(req.query.latitude);
+  const longitude = Number(req.query.longitude);
+  if (
+    !Number.isFinite(latitude)
+    || latitude < -90
+    || latitude > 90
+    || !Number.isFinite(longitude)
+    || longitude < -180
+    || longitude > 180
+  ) {
+    return res.status(400).send({ msg: 'Valid latitude and longitude are required' });
+  }
+
+  const cacheKey = `${latitude.toFixed(3)},${longitude.toFixed(3)}`;
+  if (reverseGeocodeCache.has(cacheKey)) {
+    return res.send(reverseGeocodeCache.get(cacheKey));
+  }
+
+  try {
+    const nominatimUrl = new URL('https://nominatim.openstreetmap.org/reverse');
+    nominatimUrl.searchParams.set('format', 'jsonv2');
+    nominatimUrl.searchParams.set('addressdetails', '1');
+    nominatimUrl.searchParams.set('zoom', '10');
+    nominatimUrl.searchParams.set('lat', latitude.toString());
+    nominatimUrl.searchParams.set('lon', longitude.toString());
+    const response = await scheduleNominatimRequest(nominatimUrl);
+    if (!response.ok) {
+      return res.status(502).send({ msg: 'Could not look up this place right now' });
+    }
+
+    const data = await response.json();
+    const address = data.address || {};
+    const place = {
+      city: address.city
+        || address.town
+        || address.village
+        || address.municipality
+        || address.hamlet
+        || address.county
+        || '',
+      country: address.country || '',
+    };
+    if (reverseGeocodeCache.size >= 500) {
+      reverseGeocodeCache.delete(reverseGeocodeCache.keys().next().value);
+    }
+    reverseGeocodeCache.set(cacheKey, place);
+    res.send(place);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/api/music/deezer/search', async (req, res, next) => {
   const query = req.query.q;
   if (typeof query !== 'string' || !query.trim()) {
@@ -123,19 +190,34 @@ app.get('/api/music/deezer/search', async (req, res, next) => {
   }
 });
 
-app.get('/api/scores', verifyAuth, (_req, res) => {
+app.get('/api/scores', (_req, res) => {
   res.send(getPublicScores());
 });
 
-app.post('/api/score', verifyAuth, (req, res) => {
+app.post('/api/score', verifyAuth, async (req, res) => {
   const { score } = req.body;
   if (!Number.isFinite(score) || score < 0) {
     return res.status(400).send({ msg: 'A non-negative score is required' });
   }
 
+  const date = getMountainDateKey();
+  const previousScores = scores;
+  const previousDate = scoreStoreDate;
+  if (date !== scoreStoreDate) {
+    scores = [];
+    scoreStoreDate = date;
+  }
   const user = req.authenticatedUser;
   scores = updateScores({ name: getPublicName(user.email), score });
-  res.send(getPublicScores());
+  try {
+    await persistScores();
+    res.send(getPublicScores());
+  } catch (error) {
+    scores = previousScores;
+    scoreStoreDate = previousDate;
+    console.error('Unable to save the daily leaderboard:', error);
+    res.status(500).send({ msg: 'Could not save your score. Please try again.' });
+  }
 });
 
 app.get('/api/health', (req, res) => {
@@ -149,7 +231,92 @@ async function createUser(email, password) {
     token: uuid.v4(),
   };
   users.push(user);
+  try {
+    await persistUsers();
+  } catch (error) {
+    users.splice(users.indexOf(user), 1);
+    throw error;
+  }
   return user;
+}
+
+async function loadUsers() {
+  let contents;
+  try {
+    contents = await fs.readFile(userStorePath, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
+  }
+
+  const savedUsers = JSON.parse(contents);
+  if (!Array.isArray(savedUsers) || savedUsers.some((user) => (
+    !user
+    || typeof user.email !== 'string'
+    || typeof user.password !== 'string'
+  ))) {
+    throw new Error('The saved user account file has an invalid format.');
+  }
+
+  users.push(...savedUsers.map(({ email, password }) => ({ email, password })));
+}
+
+async function loadScores() {
+  let contents;
+  try {
+    contents = await fs.readFile(scoreStorePath, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
+  }
+
+  const savedScores = JSON.parse(contents);
+  if (
+    !savedScores
+    || !isDateKey(savedScores.date)
+    || !Array.isArray(savedScores.scores)
+    || savedScores.scores.some((entry) => (
+      !entry
+      || typeof entry.name !== 'string'
+      || !Number.isFinite(entry.score)
+      || entry.score < 0
+    ))
+  ) {
+    throw new Error('The saved leaderboard file has an invalid format.');
+  }
+
+  if (savedScores.date === getMountainDateKey()) {
+    scoreStoreDate = savedScores.date;
+    scores = savedScores.scores.slice(0, 10);
+  }
+}
+
+function persistScores() {
+  const writeScores = async () => {
+    await fs.mkdir(path.dirname(scoreStorePath), { recursive: true });
+    const temporaryPath = `${scoreStorePath}.${process.pid}.tmp`;
+    const savedScores = JSON.stringify({ date: scoreStoreDate, scores }, null, 2);
+    await fs.writeFile(temporaryPath, savedScores, 'utf8');
+    await fs.rename(temporaryPath, scoreStorePath);
+  };
+  userWriteQueue = userWriteQueue.then(writeScores, writeScores);
+  return userWriteQueue;
+}
+
+function persistUsers() {
+  const writeUsers = async () => {
+    await fs.mkdir(path.dirname(userStorePath), { recursive: true });
+    const temporaryPath = `${userStorePath}.${process.pid}.tmp`;
+    const savedUsers = users.map(({ email, password }) => ({ email, password }));
+    await fs.writeFile(temporaryPath, JSON.stringify(savedUsers, null, 2), 'utf8');
+    await fs.rename(temporaryPath, userStorePath);
+  };
+  userWriteQueue = userWriteQueue.then(writeUsers, writeUsers);
+  return userWriteQueue;
 }
 
 async function findUser(field, value) {
@@ -204,7 +371,38 @@ function isDateKey(value) {
     && parsedDate.toISOString().slice(0, 10) === value;
 }
 
+function getMountainDateKey() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Denver',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
+}
+
+function scheduleNominatimRequest(url) {
+  const request = nominatimRequestQueue.then(async () => {
+    const wait = Math.max(0, 1000 - (Date.now() - lastNominatimRequestAt));
+    if (wait > 0) {
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+    lastNominatimRequestAt = Date.now();
+    return fetch(url, {
+      headers: { 'User-Agent': 'TuneCatcher/1.0 (reverse geocoding)' },
+    });
+  });
+  nominatimRequestQueue = request.then(() => undefined, () => undefined);
+  return request;
+}
+
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
-app.listen(port, () => {
-  console.log(`Listening on port ${port}`);
+Promise.all([loadUsers(), loadScores()]).then(() => {
+  app.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+  });
+}).catch((error) => {
+  console.error('Could not load saved user accounts:', error);
+  process.exitCode = 1;
 });

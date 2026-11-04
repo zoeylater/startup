@@ -13,10 +13,12 @@ export default function Guess({
   trackError,
 }) {
   const [location, setLocation] = useState(null);
+  const [placeLookup, setPlaceLookup] = useState('');
   const [validationMessage, setValidationMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const audioRef = useRef(null);
+  const lookupControllerRef = useRef(null);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -24,10 +26,39 @@ export default function Guess({
     }
   }, [challenge.preview?.url]);
 
-  const handleLocationSelect = useCallback((selectedLocation) => {
+  const handleLocationSelect = useCallback(async (selectedLocation) => {
+    lookupControllerRef.current?.abort();
+    const controller = new AbortController();
+    lookupControllerRef.current = controller;
     setLocation(selectedLocation);
+    setPlaceLookup('Looking up place…');
     setValidationMessage('');
+
+    try {
+      const query = new URLSearchParams({
+        latitude: String(selectedLocation.latitude),
+        longitude: String(selectedLocation.longitude),
+      });
+      const response = await fetch(`/api/location/reverse?${query}`, {
+        signal: controller.signal,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.msg || 'Could not look up this place.');
+      }
+
+      const placeName = [data.city, data.country].filter(Boolean).join(', ');
+      setPlaceLookup(placeName || 'Place name unavailable');
+    } catch {
+      if (!controller.signal.aborted) {
+        setPlaceLookup(
+          `Place name unavailable · ${selectedLocation.latitude.toFixed(2)}°, ${selectedLocation.longitude.toFixed(2)}°`,
+        );
+      }
+    }
   }, []);
+
+  useEffect(() => () => lookupControllerRef.current?.abort(), []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -106,7 +137,7 @@ export default function Guess({
                     />
                     <p className="map-location" aria-live="polite">
                       {location
-                        ? `Selected: ${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`
+                        ? `Selected: ${placeLookup || `${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`}`
                         : 'No location selected'}
                     </p>
                   </div>

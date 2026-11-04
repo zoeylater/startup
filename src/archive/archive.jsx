@@ -239,9 +239,6 @@ export default function Archive({
             <section className="archive-selection" aria-live="polite">
               {selectedResult ? (
                 <>
-                  <h3>{selectedArchive.title}</h3>
-                  <p>{selectedArchive.artist} · {selectedArchive.date}</p>
-                  <p>Artist origin: {selectedArchive.city}, {selectedArchive.country}</p>
                   <p className="archive-result-score">
                     Your score: <strong>{selectedResult.score} points</strong>
                   </p>
@@ -251,7 +248,7 @@ export default function Archive({
                     className="btn btn-primary"
                     onClick={viewSelectedResult}
                   >
-                    View your result
+                    View more details
                   </button>
                 </>
               ) : (
@@ -287,7 +284,7 @@ export default function Archive({
           )}
 
           <Link className="btn btn-primary archive-back-link mt-3" to="/result">
-            Back to Results
+            Back to results
           </Link>
         </div>
       </section>

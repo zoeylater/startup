@@ -12,11 +12,15 @@ import { fetchArchiveTrack, fetchDailyTrack } from './music/dailyTrack';
 import { getDisplayName } from './utils/displayName';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
-function getLocalDateKey() {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${today.getFullYear()}-${month}-${day}`;
+function getMountainDateKey() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Denver',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
 }
 const DAILY_LOCATION = {
   country: 'Kenya',
@@ -127,7 +131,7 @@ export default function App() {
   const [activity, setActivity] = useState([
     'Daily challenge is ready to play.',
   ]);
-  const [dailyDate, setDailyDate] = useState(getLocalDateKey);
+  const [dailyDate, setDailyDate] = useState(getMountainDateKey);
   const [storageReady, setStorageReady] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [serviceError, setServiceError] = useState('');
@@ -206,6 +210,14 @@ export default function App() {
     let active = true;
     (async () => {
       try {
+        await refreshScores();
+      } catch (error) {
+        if (active) {
+          setServiceError(error instanceof Error ? error.message : 'Could not load scores.');
+        }
+      }
+
+      try {
         const response = await fetch('/api/user/me');
         if (response.status === 401) {
           return;
@@ -242,7 +254,7 @@ export default function App() {
       const storedValue = window.localStorage.getItem(STORAGE_KEY);
       if (storedValue) {
         const savedState = JSON.parse(storedValue);
-        const today = getLocalDateKey();
+        const today = getMountainDateKey();
         if (!isSavedState(savedState)) {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
@@ -300,7 +312,7 @@ export default function App() {
     }
 
     function resetForNewDay() {
-      const today = getLocalDateKey();
+      const today = getMountainDateKey();
       if (today !== dailyDate) {
         setDailyDate(today);
         setGuessesByUser({});

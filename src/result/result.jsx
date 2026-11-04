@@ -65,9 +65,9 @@ export default function Result({
               )}
               <Link
                 className="btn btn-primary mt-3"
-                to={isArchiveResult ? '/archives' : '/'}
+                to={isArchiveResult ? '/result' : '/'}
               >
-                {isArchiveResult ? 'Back to Archives' : 'Back to Home'}
+                {isArchiveResult ? "Back to today's results" : 'Back to home'}
               </Link>
             </>
           ) : (
