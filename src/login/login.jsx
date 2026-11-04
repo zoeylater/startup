@@ -2,24 +2,31 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login({ user, onLogin, onLogout }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  function handleSubmit(event) {
+  async function handleSubmit(event, endpoint) {
     event.preventDefault();
-    const cleanedUsername = username.trim();
-
-    if (!cleanedUsername) {
+    const form = event.currentTarget instanceof HTMLFormElement
+      ? event.currentTarget
+      : event.currentTarget.form;
+    if (form && !form.reportValidity()) {
       return;
     }
-    if (!password.trim()) {
-      return;
+    setSubmitting(true);
+    setError('');
+    try {
+      await onLogin(email.trim(), password, endpoint);
+      setPassword('');
+      navigate('/');
+    } catch (authError) {
+      setError(authError instanceof Error ? authError.message : 'Authentication failed');
+    } finally {
+      setSubmitting(false);
     }
-
-    onLogin(cleanedUsername);
-    setPassword('');
-    navigate('/');
   }
 
   return (
@@ -29,7 +36,7 @@ export default function Login({ user, onLogin, onLogout }) {
           <h2 className="mb-3">Sign In</h2>
           {user
             ? <p className="mb-0">You are signed in as <strong>{user}</strong>.</p>
-            : <p className="mb-0">Enter your player name to continue to today’s music challenge.</p>}
+            : <p className="mb-0">Sign in or create an account to continue to today’s music challenge.</p>}
         </div>
       </section>
 
@@ -44,18 +51,17 @@ export default function Login({ user, onLogin, onLogout }) {
               Sign Out
             </button>
           ) : (
-            <form onSubmit={handleSubmit} className="row g-3">
+            <form onSubmit={(event) => handleSubmit(event, '/api/auth/login')} className="row g-3">
               <div className="col-12">
-                <label htmlFor="username" className="form-label">Username</label>
+                <label htmlFor="email" className="form-label">Email</label>
                 <input
-                  id="username"
-                  type="text"
-                  name="username"
+                  id="email"
+                  type="email"
+                  name="email"
                   className="form-control"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  autoComplete="off"
-                  maxLength={24}
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -72,9 +78,18 @@ export default function Login({ user, onLogin, onLogout }) {
                   required
                 />
               </div>
+              {error && <div className="col-12 text-danger" role="alert">{error}</div>}
               <div className="col-12">
-                <button type="submit" className="btn btn-primary px-4">
-                  Continue
+                <button type="submit" className="btn btn-primary px-4" disabled={submitting}>
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary px-4"
+                  disabled={submitting}
+                  onClick={(event) => handleSubmit(event, '/api/auth/create')}
+                >
+                  Register
                 </button>
               </div>
             </form>

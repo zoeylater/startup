@@ -8,7 +8,6 @@ import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
 import Archive from './archive/archive';
-import { INITIAL_SCORES } from './config/leaderboard';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
 function getLocalDateKey() {
@@ -38,8 +37,6 @@ const CHALLENGE = {
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   },
 };
-const LIVE_PLAYERS = ['Jules', 'Aria', 'Maya'];
-
 function isSavedState(value) {
   const isValidGuess = (guess) => (
     guess
@@ -67,11 +64,13 @@ function isSavedState(value) {
     )
     && validGuesses
     && validLegacyGuess
-    && Array.isArray(value.scores)
-    && value.scores.every((entry) => (
-      entry
-      && typeof entry.name === 'string'
-      && Number.isFinite(entry.score)
+    && (value.scores === undefined || (
+      Array.isArray(value.scores)
+      && value.scores.every((entry) => (
+        entry
+        && typeof entry.name === 'string'
+        && Number.isFinite(entry.score)
+      ))
     ))
     && Array.isArray(value.activity)
     && value.activity.every((entry) => typeof entry === 'string')
@@ -95,13 +94,61 @@ function RequireUser({ user, children }) {
 export default function App() {
   const [user, setUser] = useState('');
   const [guessesByUser, setGuessesByUser] = useState({});
-  const [scores, setScores] = useState(INITIAL_SCORES);
+  const [scores, setScores] = useState([]);
   const [activity, setActivity] = useState([
     'Daily challenge is ready to play.',
   ]);
   const [dailyDate, setDailyDate] = useState(getLocalDateKey);
   const [storageReady, setStorageReady] = useState(false);
   const [storageError, setStorageError] = useState('');
+  const [serviceError, setServiceError] = useState('');
+
+  async function refreshScores() {
+    const response = await fetch('/api/scores');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.msg || 'Could not load scores.');
+    }
+    if (!Array.isArray(data)) {
+      throw new Error('The service returned invalid scores.');
+    }
+    setScores(data);
+  }
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/user/me');
+        if (response.status === 401) {
+          return;
+        }
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.msg || 'Could not restore your session.');
+        }
+        if (active) {
+          setUser(data.email);
+          const scoresResponse = await fetch('/api/scores');
+          const scoresData = await scoresResponse.json();
+          if (!scoresResponse.ok || !Array.isArray(scoresData)) {
+            throw new Error(scoresData.msg || 'Could not load scores.');
+          }
+          if (active) {
+            setScores(scoresData);
+          }
+        }
+      } catch (error) {
+        if (active) {
+          setServiceError(error instanceof Error ? error.message : 'Could not connect to the service.');
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -115,7 +162,6 @@ export default function App() {
         setDailyDate(today);
         if (savedState.date && savedState.date !== today) {
           setGuessesByUser({});
-          setScores(INITIAL_SCORES);
           setActivity(['Daily challenge is ready to play.']);
         } else {
           const savedGuesses = savedState.guesses
@@ -123,7 +169,6 @@ export default function App() {
               ? { [savedState.user]: savedState.guess }
               : {});
           setGuessesByUser(savedGuesses);
-          setScores(savedState.scores);
           setActivity(savedState.activity);
         }
       }
@@ -145,7 +190,6 @@ export default function App() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
         guesses: guessesByUser,
-        scores,
         activity,
         date: dailyDate,
       }));
@@ -159,7 +203,7 @@ export default function App() {
           : 'Could not save progress.',
       );
     }
-  }, [storageReady, guessesByUser, scores, activity, dailyDate]);
+  }, [storageReady, guessesByUser, activity, dailyDate]);
 
   useEffect(() => {
     if (!storageReady) {
@@ -171,7 +215,6 @@ export default function App() {
       if (today !== dailyDate) {
         setDailyDate(today);
         setGuessesByUser({});
-        setScores(INITIAL_SCORES);
         setActivity(['Daily challenge is ready to play.']);
       }
     }
@@ -187,42 +230,43 @@ export default function App() {
     };
   }, [storageReady, dailyDate]);
 
-  useEffect(() => {
-    let updateIndex = 0;
-    const intervalId = window.setInterval(() => {
-      const playerIndex = updateIndex % LIVE_PLAYERS.length;
-      const player = LIVE_PLAYERS[playerIndex];
-      const score = INITIAL_SCORES[playerIndex].score
-        + (Math.floor(updateIndex / LIVE_PLAYERS.length) + 1) * 5;
-      setScores((currentScores) => currentScores
-        .map((entry) => (
-          entry.name === player
-            ? { ...entry, score: Math.max(entry.score, score) }
-            : entry
-        ))
-        .sort((first, second) => second.score - first.score)
-        .slice(0, 5));
-      setActivity((current) => [
-        `${player} earned ${score} points. The leaderboard was updated.`,
-        ...current,
-      ].slice(0, 8));
-      updateIndex += 1;
-    }, 15000);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
-
-  function handleLogin(username) {
-    setUser(username);
-    setActivity((current) => [`${username} joined the challenge.`, ...current].slice(0, 8));
+  async function handleLogin(email, password, endpoint) {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.msg || 'Authentication failed.');
+    }
+    setUser(data.email);
+    setServiceError('');
+    setActivity((current) => [`${data.email} joined the challenge.`, ...current].slice(0, 8));
+    try {
+      await refreshScores();
+    } catch (error) {
+      setServiceError(error instanceof Error ? error.message : 'Could not load scores.');
+    }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'DELETE' });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.msg || 'Could not sign out.');
+      }
+    } catch (error) {
+      setServiceError(error instanceof Error ? error.message : 'Could not sign out.');
+      return;
+    }
     setActivity((current) => [`${user} signed out.`, ...current].slice(0, 8));
     setUser('');
+    setServiceError('');
   }
 
-  function handleGuessSubmission(submittedGuess) {
+  async function handleGuessSubmission(submittedGuess) {
     if (!user || guessesByUser[user]) {
       return;
     }
@@ -251,16 +295,30 @@ export default function App() {
       actualLongitude: CHALLENGE.longitude,
     };
 
+    try {
+      const response = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.msg || 'Could not submit your score.');
+      }
+      if (!Array.isArray(data)) {
+        throw new Error('The service returned invalid scores.');
+      }
+      setScores(data);
+      setServiceError('');
+    } catch (error) {
+      setServiceError(error instanceof Error ? error.message : 'Could not submit your score.');
+      return;
+    }
+
     setGuessesByUser((current) => ({
       ...current,
       [user]: result,
     }));
-    setScores((currentScores) => {
-      const previousBest = currentScores.find((entry) => entry.name === result.name)?.score ?? 0;
-      const bestScores = currentScores.filter((entry) => entry.name !== result.name);
-      bestScores.push({ name: result.name, score: Math.max(previousBest, score) });
-      return bestScores.sort((first, second) => second.score - first.score).slice(0, 5);
-    });
     setActivity((current) => [
       `${result.name} submitted a guess and scored ${score} points.`,
       ...current,
@@ -275,6 +333,11 @@ export default function App() {
         {storageError && (
           <p className="storage-alert" role="status">
             {storageError} Your progress may not remain available after you leave.
+          </p>
+        )}
+        {serviceError && (
+          <p className="storage-alert" role="alert">
+            {serviceError}
           </p>
         )}
         <header className="site-header">
