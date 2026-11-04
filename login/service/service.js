@@ -34,6 +34,11 @@ function setAuthCookie(res, user) {
   res.cookie('token', user.token, cookieOptions);
 }
 
+function clearAuthCookie(res, user) {
+  delete user.token;
+  res.clearCookie('token', cookieOptions);
+}
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -61,21 +66,23 @@ app.put('/api/auth', async (req, res) => {
 
 // logout
 app.delete('/api/auth', async (req, res) => {
-  const user = getUser('token', req.cookies.token);
+  const token = req.cookies['token'];
+  const user = getUser('token', token);
   if (user) {
-    delete user.token;
+    clearAuthCookie(res, user);
   }
-  res.clearCookie('token', cookieOptions);
   res.send({});
 });
 
 // getMe
-app.get('/api/user', async (req, res) => {
-  const user = getUser('token', req.cookies.token);
-  if (!user) {
-    return res.status(401).send({ msg: 'Unauthorized' });
+app.get(['/api/user', '/api/user/me'], async (req, res) => {
+  const token = req.cookies['token'];
+  const user = getUser('token', token);
+  if (user) {
+    res.send({ email: user.email });
+  } else {
+    res.status(401).send({ msg: 'Unauthorized' });
   }
-  res.send({ email: user.email });
 });
 
 const port = 3000;
