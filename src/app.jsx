@@ -8,7 +8,12 @@ import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
 import Archive from './archive/archive';
-import { fetchArchiveTrack, fetchDailyTrack } from './music/dailyTrack';
+import {
+  fetchArchiveTrack,
+  fetchDailyTrack,
+  getDailyChallengeId,
+  guessMatchesDailyChallenge,
+} from './music/dailyTrack';
 import { getDisplayName } from './utils/displayName';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
@@ -37,6 +42,8 @@ function calculateGuessResult(submittedGuess, location, details) {
   );
   return {
     ...submittedGuess,
+    guessLocation: submittedGuess.locationName
+      || `${submittedGuess.latitude.toFixed(2)}°, ${submittedGuess.longitude.toFixed(2)}°`,
     score: Math.max(0, Math.round(1000 * (1 - distanceKm / 20000))),
     distanceKm: Math.round(distanceKm),
     actualCountry: details.country,
@@ -429,7 +436,7 @@ export default function App() {
       return true;
     }
 
-    if (!user || guessesByUser[user]) {
+    if (!user || guess) {
       return false;
     }
 
@@ -450,6 +457,7 @@ export default function App() {
     const result = {
       ...calculateGuessResult(submittedGuess, dailyLocation, dailyTrack),
       name: user || 'Guest',
+      challengeId: getDailyChallengeId(dailyTrack),
       musicMetadata: dailyTrack.musicMetadata,
       previewTrackUrl: dailyTrack.preview?.trackUrl,
       albumCover: dailyTrack.preview?.albumCover,
@@ -493,8 +501,23 @@ export default function App() {
     return true;
   }
 
-  const guess = user ? guessesByUser[user] || null : null;
-  const archiveGuesses = user ? archiveGuessesByUser[user] || {} : {};
+  const savedGuess = user ? guessesByUser[user] || null : null;
+  const dailyChallengeLoaded = Boolean(dailyTrack.musicMetadata && dailyTrack.preview);
+  const guess = savedGuess && dailyChallengeLoaded
+    && guessMatchesDailyChallenge(savedGuess, dailyTrack)
+    ? savedGuess
+    : null;
+  const archiveGuesses = user
+    ? Object.fromEntries(Object.entries(archiveGuessesByUser[user] || {}).filter(
+      ([date, result]) => (
+        date !== dailyDate
+        || (
+          dailyChallengeLoaded
+          && guessMatchesDailyChallenge(result, dailyTrack)
+        )
+      ),
+    ))
+    : {};
   const challenge = archiveChallenge
     ? archiveTrack || {
       musicMetadata: {

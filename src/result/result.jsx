@@ -10,8 +10,8 @@ export default function Result({
   challengeDate,
 }) {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
-  const albumCover = result?.albumCover || dailyTrack?.preview?.albumCover;
-  const musicMetadata = result?.musicMetadata || dailyTrack?.musicMetadata;
+  const albumCover = dailyTrack?.preview?.albumCover || result?.albumCover;
+  const musicMetadata = dailyTrack?.musicMetadata || result?.musicMetadata;
 
   return (
     <main className="result-page container py-4">
@@ -32,7 +32,7 @@ export default function Result({
                 <div className="result-metric col-12 col-md-4">
                   <span className="result-metric-label">Your guess</span>
                   <span className="result-metric-value guess-value">
-                    {result.latitude.toFixed(2)}°, {result.longitude.toFixed(2)}°
+                    {result.guessLocation || `${result.latitude.toFixed(2)}°, ${result.longitude.toFixed(2)}°`}
                   </span>
                 </div>
                 <div className="result-metric col-12 col-md-4">

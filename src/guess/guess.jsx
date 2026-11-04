@@ -14,6 +14,7 @@ export default function Guess({
 }) {
   const [location, setLocation] = useState(null);
   const [placeLookup, setPlaceLookup] = useState('');
+  const [placeLookupLoading, setPlaceLookupLoading] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function Guess({
     lookupControllerRef.current = controller;
     setLocation(selectedLocation);
     setPlaceLookup('Looking up place…');
+    setPlaceLookupLoading(true);
     setValidationMessage('');
 
     try {
@@ -49,11 +51,13 @@ export default function Guess({
 
       const placeName = [data.city, data.country].filter(Boolean).join(', ');
       setPlaceLookup(placeName || 'Place name unavailable');
+      setPlaceLookupLoading(false);
     } catch {
       if (!controller.signal.aborted) {
         setPlaceLookup(
           `Place name unavailable · ${selectedLocation.latitude.toFixed(2)}°, ${selectedLocation.longitude.toFixed(2)}°`,
         );
+        setPlaceLookupLoading(false);
       }
     }
   }, []);
@@ -71,6 +75,7 @@ export default function Guess({
       const submitted = await onSubmitGuess({
         latitude: location.latitude,
         longitude: location.longitude,
+        locationName: placeLookup || `${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`,
       });
       if (submitted !== false) {
         if (isArchiveChallenge) {
@@ -149,8 +154,16 @@ export default function Guess({
                       {validationMessage}
                     </p>
                   )}
-                  <button type="submit" className="btn btn-primary px-4" disabled={submitting}>
-                    {submitting ? 'Submitting…' : 'Submit Guess'}
+                  <button
+                    type="submit"
+                    className="btn btn-primary px-4"
+                    disabled={submitting || placeLookupLoading}
+                  >
+                    {submitting
+                      ? 'Submitting…'
+                      : placeLookupLoading
+                        ? 'Looking up place…'
+                        : 'Submit Guess'}
                   </button>
                 </div>
               </form>

@@ -4,6 +4,46 @@ function normalize(value) {
   return value.toLocaleLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+export function getDailyChallengeId(challenge) {
+  if (!challenge) {
+    return '';
+  }
+  const recordingId = challenge.musicMetadata?.recordingId || '';
+  const trackId = challenge.preview?.trackId ?? '';
+  if (recordingId || trackId) {
+    return `recording:${recordingId}|deezer:${trackId}`;
+  }
+  const title = normalize(challenge.musicMetadata?.title || challenge.title || '');
+  const artist = normalize(challenge.musicMetadata?.artist || challenge.artist || '');
+  return title && artist ? `track:${artist}:${title}` : '';
+}
+
+export function guessMatchesDailyChallenge(guess, challenge) {
+  if (!guess || !challenge) {
+    return false;
+  }
+
+  const challengeId = getDailyChallengeId(challenge);
+  if (guess.challengeId) {
+    return guess.challengeId === challengeId;
+  }
+
+  const guessTitle = normalize(guess.musicMetadata?.title || '');
+  const guessArtist = normalize(guess.musicMetadata?.artist || '');
+  const challengeTitle = normalize(
+    challenge.musicMetadata?.title || challenge.title || '',
+  );
+  const challengeArtist = normalize(
+    challenge.musicMetadata?.artist || challenge.artist || '',
+  );
+  return Boolean(
+    guessTitle
+    && guessArtist
+    && guessTitle === challengeTitle
+    && guessArtist === challengeArtist,
+  );
+}
+
 function getErrorMessage(error) {
   return error instanceof Error ? error.message : 'Unknown request error';
 }
@@ -78,7 +118,18 @@ export async function fetchDailyTrack(signal) {
     signal,
     headers: { Accept: 'application/json' },
   });
-  const data = await response.json();
+  const responseBody = await response.text();
+  let data;
+  try {
+    data = JSON.parse(responseBody);
+  } catch {
+    if (responseBody.trimStart().startsWith('<')) {
+      throw new Error(
+        'The daily challenge service returned an HTML page. Restart the backend so it loads the latest API routes.',
+      );
+    }
+    throw new Error('The daily challenge service returned invalid JSON.');
+  }
   if (!response.ok) {
     throw new Error(data.msg || `Could not load daily challenge (${response.status}).`);
   }
