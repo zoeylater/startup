@@ -74,7 +74,7 @@ app.delete('/api/auth', async (req, res) => {
   res.send({});
 });
 
-// getMe
+// Get authenticated user
 app.get('/api/user/me', async (req, res) => {
   const token = req.cookies['token'];
   const user = await getUser('token', token);
