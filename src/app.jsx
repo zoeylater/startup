@@ -8,6 +8,7 @@ import Home from './home/home';
 import Login from './login/login';
 import Result from './result/result';
 import Archive from './archive/archive';
+import { fetchDailyTrack } from './music/dailyTrack';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
 function getLocalDateKey() {
@@ -16,26 +17,11 @@ function getLocalDateKey() {
   const day = String(today.getDate()).padStart(2, '0');
   return `${today.getFullYear()}-${month}-${day}`;
 }
-const CHALLENGE = {
-  musicMetadata: {
-    source: 'MusicBrainz metadata mock',
-    recordingId: 'mock-recording-001',
-    title: 'Daily Track Preview',
-    artist: 'TuneCatcher Sample Artist',
-    release: 'TuneCatcher Daily Collection',
-  },
+const DAILY_LOCATION = {
   country: 'Kenya',
   city: 'Nairobi',
   latitude: -1.286389,
   longitude: 36.817223,
-  preview: {
-    provider: 'Deezer',
-    trackId: null,
-    durationSeconds: 30,
-    isPlaceholder: true,
-    source: 'Deezer preview placeholder — sample audio, API not connected',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  },
 };
 function isSavedState(value) {
   const isValidGuess = (guess) => (
@@ -93,6 +79,11 @@ function RequireUser({ user, children }) {
 
 export default function App() {
   const [user, setUser] = useState('');
+  const [dailyTrack, setDailyTrack] = useState({
+    musicMetadata: null,
+    preview: null,
+    previewError: '',
+  });
   const [guessesByUser, setGuessesByUser] = useState({});
   const [scores, setScores] = useState([]);
   const [activity, setActivity] = useState([
@@ -102,6 +93,25 @@ export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [serviceError, setServiceError] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchDailyTrack(controller.signal)
+      .then(setDailyTrack)
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setDailyTrack({
+            musicMetadata: null,
+            preview: null,
+            previewError: error instanceof Error
+              ? `Could not load daily track metadata: ${error.message}`
+              : 'Could not load daily track metadata.',
+          });
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   async function refreshScores() {
     const response = await fetch('/api/scores');
@@ -272,11 +282,11 @@ export default function App() {
     }
 
     const radians = (degrees) => (degrees * Math.PI) / 180;
-    const latitudeDifference = radians(CHALLENGE.latitude - submittedGuess.latitude);
-    const longitudeDifference = radians(CHALLENGE.longitude - submittedGuess.longitude);
+    const latitudeDifference = radians(DAILY_LOCATION.latitude - submittedGuess.latitude);
+    const longitudeDifference = radians(DAILY_LOCATION.longitude - submittedGuess.longitude);
     const rawHaversine = Math.sin(latitudeDifference / 2) ** 2
       + Math.cos(radians(submittedGuess.latitude))
-      * Math.cos(radians(CHALLENGE.latitude))
+      * Math.cos(radians(DAILY_LOCATION.latitude))
       * Math.sin(longitudeDifference / 2) ** 2;
     const haversine = Math.min(1, Math.max(0, rawHaversine));
     const distanceKm = 6371 * 2 * Math.atan2(
@@ -289,10 +299,13 @@ export default function App() {
       name: user || 'Guest',
       score,
       distanceKm: Math.round(distanceKm),
-      actualCountry: CHALLENGE.country,
-      actualCity: CHALLENGE.city,
-      actualLatitude: CHALLENGE.latitude,
-      actualLongitude: CHALLENGE.longitude,
+      actualCountry: DAILY_LOCATION.country,
+      actualCity: DAILY_LOCATION.city,
+      actualLatitude: DAILY_LOCATION.latitude,
+      actualLongitude: DAILY_LOCATION.longitude,
+      musicMetadata: dailyTrack.musicMetadata,
+      previewTrackUrl: dailyTrack.preview?.trackUrl,
+      albumCover: dailyTrack.preview?.albumCover,
     };
 
     try {
@@ -351,12 +364,9 @@ export default function App() {
               <>
                 <Link to="/">Home</Link>
                 <Link to="/login">Login</Link>
-                <Link to="/about">About</Link>
                 <Link to="/guess">Guess</Link>
                 <Link to="/result">Result</Link>
-                <button type="button" className="nav-session-button" onClick={handleLogout}>
-                  Sign out ({user})
-                </button>
+                <Link to="/about">About</Link>
               </>
             ) : (
               <>
@@ -403,7 +413,8 @@ export default function App() {
             element={user ? (
               <Guess
                 user={user}
-                challenge={CHALLENGE}
+                challenge={dailyTrack}
+                trackError={dailyTrack.previewError}
                 guess={guess}
                 onSubmitGuess={handleGuessSubmission}
               />
@@ -412,7 +423,7 @@ export default function App() {
           <Route
             path="/result"
             element={user
-              ? <Result result={guess} scores={scores} />
+              ? <Result result={guess} scores={scores} dailyTrack={dailyTrack} />
               : <Navigate to="/login" replace />}
           />
           <Route

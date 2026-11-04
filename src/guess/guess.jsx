@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import mapImage from '../assets/map.jpg';
 
-export default function Guess({ user, challenge, guess, onSubmitGuess }) {
+export default function Guess({ user, challenge, guess, onSubmitGuess, trackError }) {
   const [location, setLocation] = useState(null);
   const [validationMessage, setValidationMessage] = useState('');
   const navigate = useNavigate();
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.25;
+    }
+  }, [challenge.preview?.url]);
 
   function handleMapClick(event) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -47,24 +54,31 @@ export default function Guess({ user, challenge, guess, onSubmitGuess }) {
             {user ? `Playing as ${user}. ` : ''}
             Listen to the song and place a pin where you think it comes from.
           </p>
-          <audio
-            controls
-            className="daily-track-player"
-            onTimeUpdate={(event) => {
-              if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
-                event.currentTarget.currentTime = challenge.preview.durationSeconds;
-                event.currentTarget.pause();
-              }
-            }}
-            onPlay={(event) => {
-              if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
-                event.currentTarget.currentTime = 0;
-              }
-            }}
-          >
-            <source src={challenge.preview.url} type="audio/mpeg" />
-            Your browser does not support the audio element.
-          </audio>
+          {challenge.preview ? (
+            <audio
+              ref={audioRef}
+              controls
+              className="daily-track-player"
+              onTimeUpdate={(event) => {
+                if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
+                  event.currentTarget.currentTime = challenge.preview.durationSeconds;
+                  event.currentTarget.pause();
+                }
+              }}
+              onPlay={(event) => {
+                if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
+                  event.currentTarget.currentTime = 0;
+                }
+              }}
+            >
+              <source src={challenge.preview.url} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+          ) : (
+            <p className="form-validation-message" role="status">
+              {trackError || 'Loading today’s song preview…'}
+            </p>
+          )}
           {guess ? (
             <div className="guess-complete-message">
               <p>You’ve already submitted today’s guess.</p>

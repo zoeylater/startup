@@ -74,7 +74,7 @@ I am going to use the required technologies in the following ways:
 
 - **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 
-- **3rd party APIs** - The application plans to use MusicBrainz for recording, artist, and release metadata and Deezer for 30-second audio previews. The current React version uses local MusicBrainz- and Deezer-shaped mock data and makes no API requests. Its Deezer preview URL points to sample audio until a real Deezer track is connected.
+- **3rd party APIs** - The React frontend uses `fetch` to search MusicBrainz for daily recording metadata and the backend proxies Deezer search requests to retrieve a matching 30-second audio preview (Deezer does not allow browser cross-origin requests). Track details are shown with the result so they do not reveal the answer before a guess. If either API is unavailable, the app displays a preview or metadata error instead of silently substituting mock content.
     - Leaflet.js is planned for the interactive map in a later integration. The current frontend uses a clickable world-map image as a mock.
 
 ## 🚀 Specification Deliverable

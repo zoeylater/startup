@@ -815,6 +815,24 @@ select {
   margin: 0 auto 1rem;
 }
 
+.daily-track-cover {
+  display: block;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  margin: 1.25rem auto 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 14px 28px rgba(2, 11, 18, 0.28);
+}
+
+.daily-track-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0.8rem 0 1rem !important;
+}
+
 .archive-card {
   width: min(100%, 760px);
   margin: 0 auto;

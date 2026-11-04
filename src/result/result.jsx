@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function Result({ result, scores }) {
+export default function Result({ result, scores, dailyTrack }) {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const albumCover = result?.albumCover || dailyTrack?.preview?.albumCover;
+  const musicMetadata = result?.musicMetadata || dailyTrack?.musicMetadata;
 
   return (
     <main className="result-page container py-4">
@@ -37,6 +39,19 @@ export default function Result({ result, scores }) {
                 You were approximately {result.distanceKm.toLocaleString()} km
                 from the correct location.
               </p>
+              {albumCover && (
+                <img
+                  className="daily-track-cover"
+                  src={albumCover}
+                  alt={`${musicMetadata?.release || 'Daily track'} album cover`}
+                />
+              )}
+              {musicMetadata && (
+                <p className="daily-track-caption result-note">
+                  <strong>{musicMetadata.title}</strong>
+                  <span>by {musicMetadata.artist}</span>
+                </p>
+              )}
               <Link className="btn btn-primary mt-3" to="/">Back to Home</Link>
             </>
           ) : (
