@@ -8,9 +8,8 @@ const path = require('node:path');
 const app = express();
 const authCookieName = 'token';
 const users = [];
-const frontendBuildPath = path.join(__dirname, '..', 'dist');
-const frontendIndexPath = path.join(frontendBuildPath, 'index.html');
-const publicAssetsPath = path.join(__dirname, '..', 'public');
+const publicAssetsPath = path.join(__dirname, 'public');
+const frontendIndexPath = path.join(publicAssetsPath, 'index.html');
 const userStorePath = path.join(__dirname, 'data', 'users.json');
 const scoreStorePath = path.join(__dirname, 'data', 'scores.json');
 const dailyChallengeStorePath = path.join(__dirname, 'data', 'daily-challenges.json');
@@ -281,16 +280,18 @@ app.get('/api/health', (req, res) => {
   res.send({ status: 'ok' });
 });
 
-app.use(express.static(frontendBuildPath));
 app.use(express.static(publicAssetsPath));
 app.use((req, res, next) => {
   if (
     req.method !== 'GET'
     || req.path === '/api'
     || req.path.startsWith('/api/')
+    || !req.accepts('html')
+    || path.extname(req.path)
   ) {
     return next();
   }
+  res.vary('Accept');
   res.sendFile(frontendIndexPath, (error) => {
     if (error) {
       next(error);
