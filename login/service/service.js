@@ -22,7 +22,7 @@ async function createUser(email, password) {
   return user;
 }
 
-function getUser(field, value) {
+async function getUser(field, value) {
   if (value) {
     return users.find((user) => user[field] === value);
   }
@@ -36,7 +36,7 @@ function setAuthCookie(res, user) {
 
 function clearAuthCookie(res, user) {
   delete user.token;
-  res.clearCookie('token', cookieOptions);
+  res.clearCookie('token');
 }
 
 app.use(express.json());
@@ -67,7 +67,7 @@ app.put('/api/auth', async (req, res) => {
 // logout
 app.delete('/api/auth', async (req, res) => {
   const token = req.cookies['token'];
-  const user = getUser('token', token);
+  const user = await getUser('token', token);
   if (user) {
     clearAuthCookie(res, user);
   }
@@ -75,9 +75,9 @@ app.delete('/api/auth', async (req, res) => {
 });
 
 // getMe
-app.get(['/api/user', '/api/user/me'], async (req, res) => {
+app.get('/api/user/me', async (req, res) => {
   const token = req.cookies['token'];
-  const user = getUser('token', token);
+  const user = await getUser('token', token);
   if (user) {
     res.send({ email: user.email });
   } else {
