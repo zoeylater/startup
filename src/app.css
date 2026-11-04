@@ -555,6 +555,32 @@ input[type="submit"] {
   text-align: center;
 }
 
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.auth-actions .btn {
+  width: auto;
+  min-width: 9rem;
+}
+
+.auth-register-button {
+  color: #285d87;
+  background: linear-gradient(180deg, #ffffff 0%, #eaf3fb 100%);
+  border: 1px solid rgba(32, 79, 122, 0.2);
+  box-shadow: 0 8px 18px rgba(2, 11, 18, 0.14);
+  font-family: "Lora", serif;
+}
+
+.auth-register-button:hover:not(:disabled) {
+  color: #173d5c;
+  background: #ffffff;
+  box-shadow: 0 11px 22px rgba(2, 11, 18, 0.2);
+}
+
 .instructions-toggle,
 .leaderboard-toggle {
   width: auto;
@@ -1001,41 +1027,33 @@ select {
   margin: 0 auto;
 }
 
-.map-picker {
-  position: relative;
-  display: block;
+.guess-map {
   width: 100%;
-  padding: 0;
+  height: clamp(320px, 55vh, 560px);
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.25);
   border-radius: 14px;
-  background: transparent;
+  background: #d7e4ea;
   box-shadow: 0 12px 24px rgba(2, 11, 18, 0.18);
 }
 
-.map-picker:focus-visible {
-  outline: 3px solid #d9efff;
-  outline-offset: 3px;
+.guess-map .leaflet-control-attribution {
+  font-size: 0.65rem;
 }
 
-.guess-map-image {
-  width: 100%;
-  max-width: none;
-  height: auto;
-  object-fit: contain;
+.guess-map-marker {
+  border: 0;
+  background: transparent;
+}
+
+.guess-map-marker span {
   display: block;
-}
-
-.map-pin {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
   border: 3px solid #ffffff;
   border-radius: 50%;
   background: #d45454;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
-  pointer-events: none;
 }
 
 .map-location,

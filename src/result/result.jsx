@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getDisplayName } from '../utils/displayName';
 
 export default function Result({ result, scores, dailyTrack }) {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
@@ -81,7 +82,7 @@ export default function Result({ result, scores, dailyTrack }) {
           <ol className="score-list">
             {scores.length > 0 ? scores.map((entry, index) => (
               <li key={`${entry.name}-${index}`}>
-                <span>{entry.name}</span><strong>{entry.score}</strong>
+                <span>{getDisplayName(entry.name)}</span><strong>{entry.score}</strong>
               </li>
             )) : <li>No scores yet</li>}
           </ol>

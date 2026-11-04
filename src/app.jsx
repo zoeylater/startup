@@ -9,6 +9,7 @@ import Login from './login/login';
 import Result from './result/result';
 import Archive from './archive/archive';
 import { fetchDailyTrack } from './music/dailyTrack';
+import { getDisplayName } from './utils/displayName';
 
 const STORAGE_KEY = 'tunecatcher-state-v1';
 function getLocalDateKey() {
@@ -252,7 +253,7 @@ export default function App() {
     }
     setUser(data.email);
     setServiceError('');
-    setActivity((current) => [`${data.email} joined the challenge.`, ...current].slice(0, 8));
+    setActivity((current) => [`${getDisplayName(data.email)} joined the challenge.`, ...current].slice(0, 8));
     try {
       await refreshScores();
     } catch (error) {
@@ -271,7 +272,7 @@ export default function App() {
       setServiceError(error instanceof Error ? error.message : 'Could not sign out.');
       return;
     }
-    setActivity((current) => [`${user} signed out.`, ...current].slice(0, 8));
+    setActivity((current) => [`${getDisplayName(user)} signed out.`, ...current].slice(0, 8));
     setUser('');
     setServiceError('');
   }
@@ -429,7 +430,7 @@ export default function App() {
           <Route
             path="/archives"
             element={user
-              ? <Archive archives={[]} />
+              ? <Archive />
               : <Navigate to="/login" replace />}
           />
           <Route

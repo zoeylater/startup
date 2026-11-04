@@ -79,13 +79,13 @@ export default function Login({ user, onLogin, onLogout }) {
                 />
               </div>
               {error && <div className="col-12 text-danger" role="alert">{error}</div>}
-              <div className="col-12">
+              <div className="col-12 auth-actions">
                 <button type="submit" className="btn btn-primary px-4" disabled={submitting}>
                   Sign In
                 </button>
                 <button
                   type="button"
-                  className="btn btn-outline-primary px-4"
+                  className="btn auth-register-button px-4"
                   disabled={submitting}
                   onClick={(event) => handleSubmit(event, '/api/auth/create')}
                 >

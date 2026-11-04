@@ -7,6 +7,18 @@ const app = express();
 const authCookieName = 'token';
 const users = [];
 let scores = [];
+const archives = [
+  {
+    date: '2026-11-04',
+    title: 'Suzanna',
+    artist: 'Sauti Sol',
+    city: 'Nairobi',
+    country: 'Kenya',
+    latitude: -1.286389,
+    longitude: 36.817223,
+    albumCover: 'https://cdn-images.dzcdn.net/images/cover/c4f0888eeaf101a016ab3d43a612a404/250x250-000000-80-0-0.jpg',
+  },
+];
 
 app.use(express.json());
 app.use(cookieParser());
@@ -51,6 +63,36 @@ app.get('/api/user/me', verifyAuth, (req, res) => {
   res.send({ email: req.authenticatedUser.email });
 });
 
+app.get('/api/archives', verifyAuth, (req, res) => {
+  const { start, end } = req.query;
+  if (!isDateKey(start) || !isDateKey(end) || start > end) {
+    return res.status(400).send({ msg: 'Valid start and end dates are required' });
+  }
+
+  res.send(archives.filter((archive) => archive.date >= start && archive.date <= end));
+});
+
+app.get('/api/archives', verifyAuth, async (req, res, next) => {
+  if (!archivesCollection) {
+    return res.status(503).send({ msg: 'Archive storage is not configured' });
+  }
+
+  const { start, end } = req.query;
+  if (!isDateKey(start) || !isDateKey(end) || start > end) {
+    return res.status(400).send({ msg: 'Valid start and end dates are required' });
+  }
+
+  try {
+    const archives = await archivesCollection.find(
+      { date: { $gte: start, $lte: end } },
+      { projection: { _id: 0 } },
+    ).sort({ date: 1 }).toArray();
+    res.send(archives);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/api/music/deezer/search', async (req, res, next) => {
   const query = req.query.q;
   if (typeof query !== 'string' || !query.trim()) {
@@ -73,7 +115,7 @@ app.get('/api/music/deezer/search', async (req, res, next) => {
 });
 
 app.get('/api/scores', verifyAuth, (_req, res) => {
-  res.send(scores);
+  res.send(getPublicScores());
 });
 
 app.post('/api/score', verifyAuth, (req, res) => {
@@ -83,8 +125,8 @@ app.post('/api/score', verifyAuth, (req, res) => {
   }
 
   const user = req.authenticatedUser;
-  scores = updateScores({ name: user.email, score });
-  res.send(scores);
+  scores = updateScores({ name: getPublicName(user.email), score });
+  res.send(getPublicScores());
 });
 
 app.get('/api/health', (req, res) => {
@@ -130,6 +172,27 @@ function updateScores(newScore) {
   return [...scores, newScore]
     .sort((first, second) => second.score - first.score)
     .slice(0, 10);
+}
+
+function getPublicName(email) {
+  const localPart = email.split('@')[0];
+  return localPart.split('.')[0] || 'Player';
+}
+
+function getPublicScores() {
+  return scores.map(({ name, score }) => ({
+    name: getPublicName(name),
+    score,
+  }));
+}
+
+function isDateKey(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const parsedDate = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsedDate.getTime())
+    && parsedDate.toISOString().slice(0, 10) === value;
 }
 
 const port = process.argv.length > 2 ? process.argv[2] : 4000;

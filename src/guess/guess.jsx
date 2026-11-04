@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import mapImage from '../assets/map.jpg';
+import GuessMap from './GuessMap';
 
 export default function Guess({ user, challenge, guess, onSubmitGuess, trackError }) {
   const [location, setLocation] = useState(null);
@@ -14,23 +14,10 @@ export default function Guess({ user, challenge, guess, onSubmitGuess, trackErro
     }
   }, [challenge.preview?.url]);
 
-  function handleMapClick(event) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = event.detail === 0
-      ? 0.5
-      : Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
-    const y = event.detail === 0
-      ? 0.5
-      : Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
-
-    setLocation({
-      latitude: Number((90 - y * 180).toFixed(4)),
-      longitude: Number((x * 360 - 180).toFixed(4)),
-      xPercent: x * 100,
-      yPercent: y * 100,
-    });
+  const handleLocationSelect = useCallback((selectedLocation) => {
+    setLocation(selectedLocation);
     setValidationMessage('');
-  }
+  }, []);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -91,25 +78,10 @@ export default function Guess({ user, challenge, guess, onSubmitGuess, trackErro
               <form onSubmit={handleSubmit} className="guess-form row g-3">
                 <div className="col-12">
                   <div className="map-picker-wrap">
-                    <button
-                      type="button"
-                      className="map-picker"
-                      aria-label="Choose your guess location on the world map"
-                      onClick={handleMapClick}
-                    >
-                      <img
-                        src={mapImage}
-                        alt="World map. Click to choose a location."
-                        className="guess-map-image"
-                      />
-                      {location && (
-                        <span
-                          className="map-pin"
-                          aria-hidden="true"
-                          style={{ left: `${location.xPercent}%`, top: `${location.yPercent}%` }}
-                        />
-                      )}
-                    </button>
+                    <GuessMap
+                      location={location}
+                      onLocationSelect={handleLocationSelect}
+                    />
                     <p className="map-location" aria-live="polite">
                       {location
                         ? `Selected: ${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`

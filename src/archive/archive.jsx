@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -10,9 +10,12 @@ function toDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function Archive({ archives = [] }) {
+export default function Archive() {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [selectedArchive, setSelectedArchive] = useState(null);
+  const [archives, setArchives] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const monthLabel = visibleMonth.toLocaleDateString(undefined, {
@@ -30,6 +33,45 @@ export default function Archive({ archives = [] }) {
       return { key: date, day, archive: archivesByDate.get(date) };
     }),
   ];
+
+  useEffect(() => {
+    let active = true;
+    const start = toDateKey(new Date(year, month, 1));
+    const end = toDateKey(new Date(year, month + 1, 0));
+
+    setLoading(true);
+    setError('');
+    fetch(`/api/archives?${new URLSearchParams({ start, end })}`)
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.msg || 'Could not load archived challenges.');
+        }
+        if (!Array.isArray(data)) {
+          throw new Error('The service returned invalid archive data.');
+        }
+        if (active) {
+          setArchives(data);
+        }
+      })
+      .catch((fetchError) => {
+        if (active) {
+          setError(fetchError instanceof Error
+            ? fetchError.message
+            : 'Could not load archived challenges.');
+          setArchives([]);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [year, month]);
 
   function changeMonth(offset) {
     setSelectedArchive(null);
@@ -99,10 +141,21 @@ export default function Archive({ archives = [] }) {
 
           {selectedArchive ? (
             <section className="archive-selection" aria-live="polite">
+              {selectedArchive.albumCover && (
+                <img
+                  className="daily-track-cover"
+                  src={selectedArchive.albumCover}
+                  alt={`${selectedArchive.title} album cover`}
+                />
+              )}
               <h3>{selectedArchive.title}</h3>
               <p>{selectedArchive.artist} · {selectedArchive.date}</p>
               <p>Location: {selectedArchive.city}, {selectedArchive.country}</p>
             </section>
+          ) : loading ? (
+            <p className="archive-empty-state" role="status">Loading archived challenges…</p>
+          ) : error ? (
+            <p className="archive-empty-state" role="alert">{error}</p>
           ) : archives.length === 0 ? (
             <p className="archive-empty-state" role="status">
               No archived challenges yet.

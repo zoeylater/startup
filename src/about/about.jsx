@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getDisplayName } from '../utils/displayName';
 
 const panels = [
   { id: 'layout', title: 'Why the Layout Works' },
@@ -114,7 +115,7 @@ export default function About({
                           <tbody>
                             {scores.length > 0 ? scores.map((entry, index) => (
                               <tr key={`${entry.name}-${index}`}>
-                                <td>{entry.name}</td>
+                                <td>{getDisplayName(entry.name)}</td>
                                 <td>{entry.score}</td>
                               </tr>
                             )) : (
