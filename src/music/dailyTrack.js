@@ -1,4 +1,3 @@
-const MUSICBRAINZ_URL = 'https://musicbrainz.org/ws/2/recording/';
 const DEEZER_SEARCH_URL = '/api/music/deezer/search';
 
 function normalize(value) {
@@ -75,96 +74,16 @@ export async function fetchArchiveTrack(archive, signal) {
 }
 
 export async function fetchDailyTrack(signal) {
-  const musicBrainzQuery = new URLSearchParams({
-    query: 'artist:"Sauti Sol" AND recording:"Suzanna"',
-    fmt: 'json',
-    limit: '1',
+  const response = await fetch('/api/daily-challenge', {
+    signal,
+    headers: { Accept: 'application/json' },
   });
-  const musicBrainzUrl = `${MUSICBRAINZ_URL}?${musicBrainzQuery}`;
-  let musicBrainzResponse = await fetch(
-    musicBrainzUrl,
-    { signal, headers: { Accept: 'application/json' } },
-  );
-  if (musicBrainzResponse.status === 503 && !signal.aborted) {
-    await new Promise((resolve) => setTimeout(resolve, 1100));
-    musicBrainzResponse = await fetch(
-      musicBrainzUrl,
-      { signal, headers: { Accept: 'application/json' } },
-    );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.msg || `Could not load daily challenge (${response.status}).`);
   }
-  if (!musicBrainzResponse.ok) {
-    throw new Error(`MusicBrainz request failed (${musicBrainzResponse.status}).`);
+  if (!data.musicMetadata || !data.preview || !Number.isFinite(data.latitude)) {
+    throw new Error('The service returned an incomplete daily challenge.');
   }
-
-  const musicBrainzData = await musicBrainzResponse.json();
-  const recording = musicBrainzData.recordings?.[0];
-  if (!recording) {
-    throw new Error('MusicBrainz did not find the daily recording.');
-  }
-
-  const artist = recording['artist-credit']
-    ?.map((credit) => `${credit.name}${credit.joinphrase || ''}`)
-    .join('') || 'Unknown artist';
-  const musicMetadata = {
-    source: 'MusicBrainz',
-    recordingId: recording.id,
-    title: recording.title,
-    artist,
-    release: recording.releases?.[0]?.title || '',
-    url: `https://musicbrainz.org/recording/${recording.id}`,
-  };
-
-  const deezerQuery = new URLSearchParams({
-    q: `${recording.title} ${artist}`,
-    limit: '10',
-  });
-
-  try {
-    const deezerResponse = await fetch(
-      `${DEEZER_SEARCH_URL}?${deezerQuery}`,
-      { signal, headers: { Accept: 'application/json' } },
-    );
-    if (!deezerResponse.ok) {
-      throw new Error(`Deezer request failed (${deezerResponse.status}).`);
-    }
-
-    const deezerData = await deezerResponse.json();
-    const normalizedTitle = normalize(recording.title);
-    const normalizedArtist = normalize(artist);
-    const track = deezerData.data?.find((candidate) => (
-      normalize(candidate.title) === normalizedTitle
-      && normalize(candidate.artist?.name || '').includes(normalizedArtist)
-      && candidate.preview
-    ));
-
-    if (!track) {
-      return {
-        musicMetadata,
-        preview: null,
-        previewError: 'Deezer did not provide a matching audio preview.',
-      };
-    }
-
-    return {
-      musicMetadata,
-      preview: {
-        provider: 'Deezer',
-        trackId: track.id,
-        durationSeconds: 30,
-        url: track.preview,
-        trackUrl: track.link,
-        albumCover: track.album?.cover_medium || track.album?.cover || '',
-      },
-      previewError: '',
-    };
-  } catch (error) {
-    if (signal.aborted) {
-      throw error;
-    }
-    return {
-      musicMetadata,
-      preview: null,
-      previewError: `Could not load the Deezer preview: ${getErrorMessage(error)}`,
-    };
-  }
+  return { ...data, previewError: '' };
 }

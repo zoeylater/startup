@@ -70,12 +70,12 @@ I am going to use the required technologies in the following ways:
     - Submitting a guess
     - Calculating the score based on distance from the actual location of the song
 
-- **DB/Login** - User accounts and bcrypt password hashes are saved in a local, Git-ignored JSON file so accounts survive service restarts. The current daily leaderboard is also saved locally and can be read without logging in; login is required to submit a score. Login sessions and archive data remain in service memory. MongoDB will replace this temporary account storage and persist game history and archive challenges in the database deliverable. The in-memory archive currently contains challenges for Nov 1–4, 2026; its locations are the artists' recorded origin areas from MusicBrainz, not necessarily where a song was recorded, and its cover art comes from Deezer.
+- **DB/Login** - User accounts, bcrypt password hashes, the daily leaderboard, and the generated daily challenge schedule are saved in local, Git-ignored JSON files so they survive service restarts. The leaderboard can be read without logging in; login is required to submit a score. The challenge is selected once per Mountain Time date and the scheduled artist is not reused. MongoDB will replace this temporary storage in the database deliverable.
 
 - **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 
-- **3rd party APIs** - The React frontend uses `fetch` to search MusicBrainz for daily recording metadata and the backend proxies Deezer search requests to retrieve a matching 30-second audio preview (Deezer does not allow browser cross-origin requests). Track details are shown with the result so they do not reveal the answer before a guess. If either API is unavailable, the app displays a preview or metadata error instead of silently substituting mock content.
-    - Leaflet.js with OpenStreetMap tiles provides the interactive map for location guesses.
+- **3rd party APIs** - The backend selects a daily track with a Deezer chart preview, matches its artist and recording metadata in MusicBrainz, and geocodes the artist's MusicBrainz origin area with OpenStreetMap Nominatim. It saves the selected challenge so all players receive the same song until midnight in the `America/Denver` timezone. The displayed target is the artist's recorded origin area, not necessarily where a specific song was written or recorded.
+    - Leaflet.js with OpenStreetMap tiles provides the interactive map for location guesses. Nominatim reverse geocoding labels a player's selected map location when possible.
 
 ## 🚀 Specification Deliverable
 

@@ -22,12 +22,6 @@ function getMountainDateKey() {
   const dateParts = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
   return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
 }
-const DAILY_LOCATION = {
-  country: 'Kenya',
-  city: 'Nairobi',
-  latitude: -1.286389,
-  longitude: 36.817223,
-};
 function calculateGuessResult(submittedGuess, location, details) {
   const radians = (degrees) => (degrees * Math.PI) / 180;
   const latitudeDifference = radians(location.latitude - submittedGuess.latitude);
@@ -137,6 +131,15 @@ export default function App() {
   const [serviceError, setServiceError] = useState('');
 
   useEffect(() => {
+    if (!user) {
+      setDailyTrack({
+        musicMetadata: null,
+        preview: null,
+        previewError: '',
+      });
+      return undefined;
+    }
+
     const controller = new AbortController();
     fetchDailyTrack(controller.signal)
       .then(setDailyTrack)
@@ -153,7 +156,7 @@ export default function App() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [user, dailyDate]);
 
   useEffect(() => {
     if (!archiveChallenge) {
@@ -210,13 +213,30 @@ export default function App() {
     let active = true;
     (async () => {
       try {
-        await refreshScores();
+        const response = await fetch('/api/scores');
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error(data.msg || 'Could not load scores.');
+        }
+        if (active) {
+          setScores(data);
+          setServiceError('');
+        }
       } catch (error) {
         if (active) {
           setServiceError(error instanceof Error ? error.message : 'Could not load scores.');
         }
       }
+    })();
 
+    return () => {
+      active = false;
+    };
+  }, [dailyDate]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
       try {
         const response = await fetch('/api/user/me');
         if (response.status === 401) {
@@ -228,14 +248,6 @@ export default function App() {
         }
         if (active) {
           setUser(data.email);
-          const scoresResponse = await fetch('/api/scores');
-          const scoresData = await scoresResponse.json();
-          if (!scoresResponse.ok || !Array.isArray(scoresData)) {
-            throw new Error(scoresData.msg || 'Could not load scores.');
-          }
-          if (active) {
-            setScores(scoresData);
-          }
         }
       } catch (error) {
         if (active) {
@@ -259,15 +271,26 @@ export default function App() {
           throw new Error('Saved TuneCatcher data has an invalid format.');
         }
         setDailyDate(today);
-        setArchiveGuessesByUser(savedState.archiveGuesses || {});
+        const savedGuesses = savedState.guesses
+          || (savedState.user && savedState.guess
+            ? { [savedState.user]: savedState.guess }
+            : {});
+        const savedArchiveGuesses = { ...savedState.archiveGuesses };
+        if (savedState.date && savedState.date !== today) {
+          Object.entries(savedGuesses).forEach(([email, result]) => {
+            if (result) {
+              savedArchiveGuesses[email] = {
+                ...savedArchiveGuesses[email],
+                [savedState.date]: result,
+              };
+            }
+          });
+        }
+        setArchiveGuessesByUser(savedArchiveGuesses);
         if (savedState.date && savedState.date !== today) {
           setGuessesByUser({});
           setActivity(['Daily challenge is ready to play.']);
         } else {
-          const savedGuesses = savedState.guesses
-            || (savedState.user && savedState.guess
-              ? { [savedState.user]: savedState.guess }
-              : {});
           setGuessesByUser(savedGuesses);
           setActivity(savedState.activity);
         }
@@ -410,8 +433,22 @@ export default function App() {
       return false;
     }
 
+    const dailyLocation = {
+      latitude: dailyTrack.latitude,
+      longitude: dailyTrack.longitude,
+    };
+    if (
+      !Number.isFinite(dailyLocation.latitude)
+      || !Number.isFinite(dailyLocation.longitude)
+      || !dailyTrack.country
+      || !dailyTrack.city
+    ) {
+      setServiceError('The daily challenge location is not available yet. Please try again.');
+      return false;
+    }
+
     const result = {
-      ...calculateGuessResult(submittedGuess, DAILY_LOCATION, DAILY_LOCATION),
+      ...calculateGuessResult(submittedGuess, dailyLocation, dailyTrack),
       name: user || 'Guest',
       musicMetadata: dailyTrack.musicMetadata,
       previewTrackUrl: dailyTrack.preview?.trackUrl,
@@ -441,6 +478,13 @@ export default function App() {
     setGuessesByUser((current) => ({
       ...current,
       [user]: result,
+    }));
+    setArchiveGuessesByUser((current) => ({
+      ...current,
+      [user]: {
+        ...current[user],
+        [dailyDate]: result,
+      },
     }));
     setActivity((current) => [
       `${result.name} submitted a guess and scored ${result.score} points.`,

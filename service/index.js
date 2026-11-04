@@ -10,12 +10,17 @@ const authCookieName = 'token';
 const users = [];
 const userStorePath = path.join(__dirname, 'data', 'users.json');
 const scoreStorePath = path.join(__dirname, 'data', 'scores.json');
+const dailyChallengeStorePath = path.join(__dirname, 'data', 'daily-challenges.json');
 let userWriteQueue = Promise.resolve();
 let scores = [];
 let scoreStoreDate = getMountainDateKey();
 const reverseGeocodeCache = new Map();
+const dailyChallengeCache = [];
+let dailyChallengeGeneration = null;
 let nominatimRequestQueue = Promise.resolve();
 let lastNominatimRequestAt = 0;
+let musicBrainzRequestQueue = Promise.resolve();
+let lastMusicBrainzRequestAt = 0;
 const archives = [
   {
     date: '2026-11-01',
@@ -107,13 +112,59 @@ app.get('/api/user/me', verifyAuth, (req, res) => {
   res.send({ email: req.authenticatedUser.email });
 });
 
-app.get('/api/archives', verifyAuth, (req, res) => {
+app.get('/api/daily-challenge', verifyAuth, async (_req, res) => {
+  try {
+    res.send(await getDailyChallenge());
+  } catch (error) {
+    console.error('Unable to prepare the daily challenge:', error);
+    res.status(503).send({
+      msg: 'A new daily challenge is temporarily unavailable. Please try again shortly.',
+    });
+  }
+});
+
+app.get('/api/archives', verifyAuth, async (req, res) => {
   const { start, end } = req.query;
   if (!isDateKey(start) || !isDateKey(end) || start > end) {
     return res.status(400).send({ msg: 'Valid start and end dates are required' });
   }
 
-  res.send(archives.filter((archive) => archive.date >= start && archive.date <= end));
+  const matchingArchives = archives.filter((archive) => (
+    archive.date >= start && archive.date <= end
+  ));
+  const today = getMountainDateKey();
+  const scheduledArchives = dailyChallengeCache.filter((challenge) => (
+    challenge.date >= start && challenge.date <= end
+  ));
+  for (const challenge of scheduledArchives) {
+    const archiveChallenge = toArchiveEntry(challenge);
+    const existingIndex = matchingArchives.findIndex((entry) => entry.date === challenge.date);
+    if (existingIndex >= 0) {
+      matchingArchives[existingIndex] = archiveChallenge;
+    } else {
+      matchingArchives.push(archiveChallenge);
+    }
+  }
+
+  if (
+    today >= start
+    && today <= end
+    && !scheduledArchives.some((challenge) => challenge.date === today)
+  ) {
+    try {
+      const challenge = await getDailyChallenge();
+      const existingIndex = matchingArchives.findIndex((entry) => entry.date === today);
+      if (existingIndex >= 0) {
+        matchingArchives[existingIndex] = toArchiveEntry(challenge);
+      } else {
+        matchingArchives.push(toArchiveEntry(challenge));
+      }
+    } catch (error) {
+      console.error('Unable to add today’s challenge to the archive:', error);
+    }
+  }
+  matchingArchives.sort((first, second) => first.date.localeCompare(second.date));
+  res.send(matchingArchives);
 });
 
 app.get('/api/location/reverse', verifyAuth, async (req, res, next) => {
@@ -191,6 +242,10 @@ app.get('/api/music/deezer/search', async (req, res, next) => {
 });
 
 app.get('/api/scores', (_req, res) => {
+  if (scoreStoreDate !== getMountainDateKey()) {
+    scoreStoreDate = getMountainDateKey();
+    scores = [];
+  }
   res.send(getPublicScores());
 });
 
@@ -295,6 +350,226 @@ async function loadScores() {
   }
 }
 
+async function loadDailyChallenges() {
+  let contents;
+  try {
+    contents = await fs.readFile(dailyChallengeStorePath, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
+  }
+
+  const savedChallenges = JSON.parse(contents);
+  if (!Array.isArray(savedChallenges) || savedChallenges.some((challenge) => (
+    !challenge
+    || !isDateKey(challenge.date)
+    || typeof challenge.artistId !== 'string'
+    || typeof challenge.title !== 'string'
+    || typeof challenge.artist !== 'string'
+    || typeof challenge.city !== 'string'
+    || typeof challenge.country !== 'string'
+    || !Number.isFinite(challenge.latitude)
+    || !Number.isFinite(challenge.longitude)
+  ))) {
+    throw new Error('The saved daily challenge file has an invalid format.');
+  }
+
+  dailyChallengeCache.push(...savedChallenges);
+}
+
+async function getDailyChallenge() {
+  const date = getMountainDateKey();
+  const existing = dailyChallengeCache.find((challenge) => challenge.date === date);
+  if (existing) {
+    return existing;
+  }
+  if (dailyChallengeGeneration?.date === date) {
+    return dailyChallengeGeneration.promise;
+  }
+
+  const promise = createDailyChallenge(date);
+  dailyChallengeGeneration = { date, promise };
+  try {
+    return await promise;
+  } finally {
+    if (dailyChallengeGeneration?.promise === promise) {
+      dailyChallengeGeneration = null;
+    }
+  }
+}
+
+async function createDailyChallenge(date) {
+  const chartUrl = new URL('https://api.deezer.com/chart/0/tracks');
+  chartUrl.searchParams.set('limit', '100');
+  const chartResponse = await fetch(chartUrl);
+  if (!chartResponse.ok) {
+    throw new Error(`Deezer chart request failed (${chartResponse.status}).`);
+  }
+
+  const chart = await chartResponse.json();
+  const usedArtistIds = new Set(dailyChallengeCache.map((challenge) => challenge.artistId));
+  const candidates = (chart.data || []).filter((track) => (
+    track.preview
+    && track.artist?.id
+    && track.artist?.name
+    && !usedArtistIds.has(String(track.artist.id))
+  ));
+  if (candidates.length === 0) {
+    throw new Error('Deezer did not provide any unused artists with previews.');
+  }
+
+  const startIndex = hashString(date) % candidates.length;
+  const orderedCandidates = [
+    ...candidates.slice(startIndex),
+    ...candidates.slice(0, startIndex),
+  ];
+
+  for (const track of orderedCandidates) {
+    const artist = await findMusicBrainzArtist(track.artist.name);
+    if (!artist?.['begin-area']?.name) {
+      continue;
+    }
+    const country = artist.area?.name || artist.country;
+    if (!country) {
+      continue;
+    }
+    const origin = await geocodeArtistOrigin(artist['begin-area'].name, country, artist.country);
+    if (!origin) {
+      continue;
+    }
+
+    const recording = await findMusicBrainzRecording(track.title, artist.id);
+    const challenge = {
+      date,
+      artistId: String(track.artist.id),
+      title: recording?.title || track.title,
+      artist: artist.name,
+      city: artist['begin-area'].name,
+      country,
+      latitude: origin.latitude,
+      longitude: origin.longitude,
+      musicMetadata: {
+        source: 'MusicBrainz',
+        recordingId: recording?.id || '',
+        title: recording?.title || track.title,
+        artist: artist.name,
+        release: recording?.releases?.[0]?.title || track.album?.title || '',
+        url: recording?.id ? `https://musicbrainz.org/recording/${recording.id}` : '',
+      },
+      preview: {
+        provider: 'Deezer',
+        trackId: track.id,
+        durationSeconds: 30,
+        url: track.preview,
+        trackUrl: track.link,
+        albumCover: track.album?.cover_medium || track.album?.cover || '',
+      },
+    };
+    dailyChallengeCache.push(challenge);
+    await persistDailyChallenges();
+    return challenge;
+  }
+
+  throw new Error('No unused Deezer artist had a matching MusicBrainz origin.');
+}
+
+async function findMusicBrainzArtist(name) {
+  const url = new URL('https://musicbrainz.org/ws/2/artist/');
+  url.searchParams.set('query', `artist:"${name.replaceAll('"', '')}"`);
+  url.searchParams.set('fmt', 'json');
+  url.searchParams.set('limit', '5');
+  const data = await fetchMusicBrainzJson(url);
+  return data.artists?.find((artist) => (
+    normalizeMusicText(artist.name) === normalizeMusicText(name)
+  ));
+}
+
+async function findMusicBrainzRecording(title, artistId) {
+  const url = new URL('https://musicbrainz.org/ws/2/recording/');
+  url.searchParams.set(
+    'query',
+    `arid:${artistId} AND recording:"${title.replaceAll('"', '')}"`,
+  );
+  url.searchParams.set('fmt', 'json');
+  url.searchParams.set('limit', '5');
+  const data = await fetchMusicBrainzJson(url);
+  return data.recordings?.find((recording) => (
+    normalizeMusicText(recording.title) === normalizeMusicText(title)
+  ));
+}
+
+function fetchMusicBrainzJson(url) {
+  return scheduleMusicBrainzRequest(url).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`MusicBrainz request failed (${response.status}).`);
+    }
+    return response.json();
+  });
+}
+
+async function geocodeArtistOrigin(city, country, countryCode) {
+  const url = new URL('https://nominatim.openstreetmap.org/search');
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('addressdetails', '1');
+  url.searchParams.set('limit', '1');
+  url.searchParams.set('q', `${city}, ${country}`);
+  if (/^[A-Za-z]{2}$/.test(countryCode || '')) {
+    url.searchParams.set('countrycodes', countryCode.toLowerCase());
+  }
+  const response = await scheduleNominatimRequest(url);
+  if (!response.ok) {
+    return null;
+  }
+  const results = await response.json();
+  const latitude = Number(results[0]?.lat);
+  const longitude = Number(results[0]?.lon);
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? { latitude, longitude }
+    : null;
+}
+
+function normalizeMusicText(value) {
+  return value.toLocaleLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function hashString(value) {
+  let hash = 0;
+  for (const character of value) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return hash;
+}
+
+function toArchiveEntry(challenge) {
+  return {
+    date: challenge.date,
+    title: challenge.title,
+    artist: challenge.artist,
+    city: challenge.city,
+    country: challenge.country,
+    latitude: challenge.latitude,
+    longitude: challenge.longitude,
+    albumCover: challenge.preview?.albumCover || '',
+  };
+}
+
+function persistDailyChallenges() {
+  const writeChallenges = async () => {
+    await fs.mkdir(path.dirname(dailyChallengeStorePath), { recursive: true });
+    const temporaryPath = `${dailyChallengeStorePath}.${process.pid}.tmp`;
+    await fs.writeFile(
+      temporaryPath,
+      JSON.stringify(dailyChallengeCache, null, 2),
+      'utf8',
+    );
+    await fs.rename(temporaryPath, dailyChallengeStorePath);
+  };
+  userWriteQueue = userWriteQueue.then(writeChallenges, writeChallenges);
+  return userWriteQueue;
+}
+
 function persistScores() {
   const writeScores = async () => {
     await fs.mkdir(path.dirname(scoreStorePath), { recursive: true });
@@ -397,8 +672,23 @@ function scheduleNominatimRequest(url) {
   return request;
 }
 
+function scheduleMusicBrainzRequest(url) {
+  const request = musicBrainzRequestQueue.then(async () => {
+    const wait = Math.max(0, 1000 - (Date.now() - lastMusicBrainzRequestAt));
+    if (wait > 0) {
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+    lastMusicBrainzRequestAt = Date.now();
+    return fetch(url, {
+      headers: { 'User-Agent': 'TuneCatcher/1.0 (daily challenge metadata)' },
+    });
+  });
+  musicBrainzRequestQueue = request.then(() => undefined, () => undefined);
+  return request;
+}
+
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
-Promise.all([loadUsers(), loadScores()]).then(() => {
+Promise.all([loadUsers(), loadScores(), loadDailyChallenges()]).then(() => {
   app.listen(port, () => {
     console.log(`Listening on port ${port}`);
   });
