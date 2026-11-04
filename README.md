@@ -8,11 +8,11 @@ Have you ever had a conversation with your friends and wondered who has a better
 
 ### Design
 
-![Design image](opening.png)
+![Design image](public/opening.png)
 
-![Design image](page2.png)
+![Design image](public/page2.png)
 
-![Design image](page3.png)
+![Design image](public/page3.png)
 
 Above are three photos that show the user interface.
 
