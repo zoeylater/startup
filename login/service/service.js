@@ -1,12 +1,15 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
-const crypto = require('crypto');
+const uuid = require('uuid');
 const app = express();
 
 const users = [];
-const sessions = new Map();
-const cookieOptions = { httpOnly: true, sameSite: 'lax' };
+const cookieOptions = {
+  secure: true,
+  httpOnly: true,
+  sameSite: 'strict',
+};
 
 async function createUser(email, password) {
   const passwordHash = await bcrypt.hash(password, 10);
@@ -26,6 +29,11 @@ function getUser(field, value) {
   return null;
 }
 
+function setAuthCookie(res, user) {
+  user.token = uuid.v4();
+  res.cookie('token', user.token, cookieOptions);
+}
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -35,9 +43,7 @@ app.post('/api/auth', async (req, res) => {
     res.status(409).send({ msg: 'Existing user' });
   } else {
     const user = await createUser(req.body.email, req.body.password);
-    const token = crypto.randomBytes(32).toString('hex');
-    sessions.set(token, user.email);
-    res.cookie('auth', token, cookieOptions);
+    setAuthCookie(res, user);
     res.send({ email: user.email });
   }
 });
@@ -49,26 +55,23 @@ app.put('/api/auth', async (req, res) => {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
 
-  const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, user.email);
-  res.cookie('auth', token, cookieOptions);
+  setAuthCookie(res, user);
   res.send({ email: user.email });
 });
 
 // logout
 app.delete('/api/auth', async (req, res) => {
-  const token = req.cookies.auth;
-  if (token) {
-    sessions.delete(token);
+  const user = getUser('token', req.cookies.token);
+  if (user) {
+    delete user.token;
   }
-  res.clearCookie('auth', cookieOptions);
+  res.clearCookie('token', cookieOptions);
   res.send({});
 });
 
 // getMe
 app.get('/api/user', async (req, res) => {
-  const email = sessions.get(req.cookies.auth);
-  const user = await getUser('email', email);
+  const user = getUser('token', req.cookies.token);
   if (!user) {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
