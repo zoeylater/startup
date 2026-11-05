@@ -371,6 +371,9 @@ export default function App() {
     if (!response.ok) {
       throw new Error(data.msg || 'Authentication failed.');
     }
+    setArchiveChallenge(null);
+    setArchiveTrack(null);
+    setDailyDate(getMountainDateKey());
     setUser(data.email);
     setServiceError('');
     setActivity((current) => [`${getDisplayName(data.email)} joined the challenge.`, ...current].slice(0, 8));
@@ -393,13 +396,21 @@ export default function App() {
       return;
     }
     setActivity((current) => [`${getDisplayName(user)} signed out.`, ...current].slice(0, 8));
+    setArchiveChallenge(null);
+    setArchiveTrack(null);
+    setDailyDate(getMountainDateKey());
     setUser('');
     setServiceError('');
   }
 
-  async function handleGuessSubmission(submittedGuess) {
-    if (archiveChallenge) {
-      if (!user || archiveGuessesByUser[user]?.[archiveChallenge.date]) {
+  async function handleGuessSubmission(submittedGuess, archiveDate) {
+    if (archiveDate) {
+      if (
+        !archiveChallenge
+        || archiveChallenge.date !== archiveDate
+        || !user
+        || archiveGuessesByUser[user]?.[archiveDate]
+      ) {
         return false;
       }
 
@@ -605,9 +616,10 @@ export default function App() {
               <Guess
                 user={user}
                 challenge={challenge}
+                dailyChallenge={dailyTrack}
                 challengeDate={archiveChallenge?.date}
                 trackError={challenge.previewError}
-                guess={archiveChallenge ? null : guess}
+                guess={guess}
                 isArchiveChallenge={Boolean(archiveChallenge)}
                 onSubmitGuess={handleGuessSubmission}
               />

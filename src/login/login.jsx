@@ -78,7 +78,7 @@ export default function Login({ user, onLogin, onLogout }) {
                   required
                 />
               </div>
-              {error && <div className="col-12 text-danger" role="alert">{error}</div>}
+              {error && <div className="col-12 auth-error" role="alert">{error}</div>}
               <div className="col-12 auth-actions">
                 <button type="submit" className="btn btn-primary px-4" disabled={submitting}>
                   Sign In

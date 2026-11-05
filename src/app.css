@@ -562,6 +562,10 @@ input[type="submit"] {
   justify-content: center;
 }
 
+.auth-error {
+  color: #e6a3a3;
+}
+
 .auth-actions .btn {
   width: auto;
   min-width: 9rem;

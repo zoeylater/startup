@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import GuessMap from './GuessMap';
 
 export default function Guess({
   user,
   challenge,
+  dailyChallenge,
   challengeDate,
   guess,
   isArchiveChallenge = false,
@@ -17,15 +18,19 @@ export default function Guess({
   const [placeLookupLoading, setPlaceLookupLoading] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const routeLocation = useLocation();
   const navigate = useNavigate();
   const audioRef = useRef(null);
   const lookupControllerRef = useRef(null);
+  const activeArchiveChallenge = isArchiveChallenge
+    && routeLocation.state?.archiveDate === challengeDate;
+  const activeChallenge = activeArchiveChallenge ? challenge : dailyChallenge;
 
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = 0.25;
     }
-  }, [challenge.preview?.url]);
+  }, [activeChallenge.preview?.url]);
 
   const handleLocationSelect = useCallback(async (selectedLocation) => {
     lookupControllerRef.current?.abort();
@@ -72,13 +77,16 @@ export default function Guess({
     }
     setSubmitting(true);
     try {
-      const submitted = await onSubmitGuess({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        locationName: placeLookup || `${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`,
-      });
+      const submitted = await onSubmitGuess(
+        {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          locationName: placeLookup || `${location.latitude.toFixed(2)}°, ${location.longitude.toFixed(2)}°`,
+        },
+        activeArchiveChallenge ? challengeDate : null,
+      );
       if (submitted !== false) {
-        if (isArchiveChallenge) {
+        if (activeArchiveChallenge) {
           navigate('/archive-result', {
             state: { archiveDate: challengeDate },
           });
@@ -97,32 +105,32 @@ export default function Guess({
         <div className="result-inner-panel p-3 p-md-4">
           <h2 className="mb-3">Where Is This Song From?</h2>
           <p className="mb-3">{user ? `Playing as ${user}` : ''}</p>
-          {challenge.preview ? (
+          {activeChallenge.preview ? (
             <audio
               ref={audioRef}
               controls
               className="daily-track-player"
               onTimeUpdate={(event) => {
-                if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
-                  event.currentTarget.currentTime = challenge.preview.durationSeconds;
+                if (event.currentTarget.currentTime >= activeChallenge.preview.durationSeconds) {
+                  event.currentTarget.currentTime = activeChallenge.preview.durationSeconds;
                   event.currentTarget.pause();
                 }
               }}
               onPlay={(event) => {
-                if (event.currentTarget.currentTime >= challenge.preview.durationSeconds) {
+                if (event.currentTarget.currentTime >= activeChallenge.preview.durationSeconds) {
                   event.currentTarget.currentTime = 0;
                 }
               }}
             >
-              <source src={challenge.preview.url} type="audio/mpeg" />
+              <source src={activeChallenge.preview.url} type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
           ) : (
             <p className="form-validation-message" role="status">
-              {trackError || 'Loading today’s song preview…'}
+              {activeChallenge.previewError || trackError || 'Loading today’s song preview…'}
             </p>
           )}
-          {guess && !isArchiveChallenge ? (
+          {guess && !activeArchiveChallenge ? (
             <div className="guess-complete-message">
               <p>You’ve already submitted today’s guess.</p>
               <Link className="btn btn-primary" to="/result">View Today’s Results</Link>
@@ -169,7 +177,7 @@ export default function Guess({
               </form>
             </>
           )}
-          {isArchiveChallenge && (
+          {activeArchiveChallenge && (
             <Link className="btn btn-secondary mt-3" to="/archives">
               Back to Archives
             </Link>
