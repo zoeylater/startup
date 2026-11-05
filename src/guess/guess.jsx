@@ -179,7 +179,7 @@ export default function Guess({
           )}
           {activeArchiveChallenge && (
             <Link className="btn btn-secondary mt-3" to="/archives">
-              Back to Archives
+              Back to archive
             </Link>
           )}
         </div>

@@ -53,6 +53,16 @@ function toDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+function formatChallengeDate(dateKey) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export default function Archive({
   onPlayArchive,
   onViewArchiveResult,
@@ -262,14 +272,13 @@ export default function Archive({
                 </>
               ) : (
                 <>
-                  <h3>Ready to play?</h3>
-                  <p>Play this archived challenge to reveal its song and location.</p>
+                  <h3>{formatChallengeDate(selectedArchive.date)}</h3>
                   <button
                     type="button"
                     className="btn btn-primary"
                     onClick={playSelectedArchive}
                   >
-                    Play this challenge
+                    Start challenge
                   </button>
                 </>
               )}
