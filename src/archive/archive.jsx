@@ -189,7 +189,7 @@ export default function Archive({
         <div className="archive-card-inner p-3 p-md-4">
           <h2 className="archive-title mb-3">From the Archives</h2>
           <p className="archive-database-note">
-            Archives are temporary for now and will be fully developed with the database deliverable.
+            The current archives are placeholders and will be fully developed with the database deliverable.
           </p>
           <p>Choose a date to revisit a past daily challenge.</p>
           <div
