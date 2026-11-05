@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { formatDistanceMiles } from '../utils/formatDistance';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const PLACEHOLDER_ARCHIVES = [
@@ -56,6 +57,7 @@ export default function Archive({
   onPlayArchive,
   onViewArchiveResult,
   playedChallenges,
+  todayDate,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -79,7 +81,11 @@ export default function Archive({
     ...Array.from({ length: daysInMonth }, (_, index) => {
       const day = index + 1;
       const date = toDateKey(new Date(year, month, day));
-      return { key: date, day, archive: archivesByDate.get(date) };
+      return {
+        key: date,
+        day,
+        archive: date < todayDate ? archivesByDate.get(date) : undefined,
+      };
     }),
   ];
 
@@ -142,13 +148,13 @@ export default function Archive({
 
   useEffect(() => {
     const archiveDate = location.state?.archiveDate;
-    if (archiveDate) {
+    if (archiveDate && archiveDate < todayDate) {
       const archive = archives.find((entry) => entry.date === archiveDate);
       if (archive) {
         setSelectedArchive(archive);
       }
     }
-  }, [archives, location.state]);
+  }, [archives, location.state, todayDate]);
 
   function changeMonth(offset) {
     setSelectedArchive(null);
@@ -158,14 +164,14 @@ export default function Archive({
   }
 
   function playSelectedArchive() {
-    if (selectedArchive) {
+    if (selectedArchive && selectedArchive.date < todayDate) {
       onPlayArchive(selectedArchive);
       navigate('/guess', { state: { archiveDate: selectedArchive.date } });
     }
   }
 
   function viewSelectedResult() {
-    if (selectedArchive) {
+    if (selectedArchive && selectedArchive.date < todayDate) {
       onViewArchiveResult(selectedArchive);
       navigate('/archive-result', {
         state: { archiveDate: selectedArchive.date },
@@ -182,6 +188,9 @@ export default function Archive({
       <section className="card archive-card shadow-sm border-0 rounded-4">
         <div className="archive-card-inner p-3 p-md-4">
           <h2 className="archive-title mb-3">From the Archives</h2>
+          <p className="archive-database-note">
+            Archives are temporary for now and will be fully developed with the database deliverable.
+          </p>
           <p>Choose a date to revisit a past daily challenge.</p>
           <div
             className="archive-calendar"
@@ -242,7 +251,7 @@ export default function Archive({
                   <p className="archive-result-score">
                     Your score: <strong>{selectedResult.score} points</strong>
                   </p>
-                  <p>You were approximately {selectedResult.distanceKm.toLocaleString()} km away.</p>
+                  <p>You were approximately {formatDistanceMiles(selectedResult.distanceKm)} away.</p>
                   <button
                     type="button"
                     className="btn btn-primary"

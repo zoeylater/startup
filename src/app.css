@@ -1004,6 +1004,12 @@ select {
   color: var(--dark-muted);
 }
 
+.archive-database-note {
+  color: var(--dark-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
 .archive-selection {
   margin: 1rem auto;
   color: var(--dark-text);

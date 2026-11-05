@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDisplayName } from '../utils/displayName';
+import { formatDistanceMiles } from '../utils/formatDistance';
 
 export default function Result({
   result,
@@ -47,8 +48,8 @@ export default function Result({
                 </div>
               </div>
               <p className="result-note">
-                You were approximately {result.distanceKm.toLocaleString()} km
-                from the correct location.
+                You were approximately {formatDistanceMiles(result.distanceKm)}
+                {' '}from the correct location.
               </p>
               {albumCover && (
                 <img

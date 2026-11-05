@@ -70,7 +70,7 @@ I am going to use the required technologies in the following ways:
     - Submitting a guess
     - Calculating the score based on distance from the actual location of the song
 
-- **DB/Login** - User accounts, bcrypt password hashes, the daily leaderboard, and the generated daily challenge schedule are saved in local, Git-ignored JSON files so they survive service restarts. The leaderboard can be read without logging in; login is required to submit a score. The challenge is selected once per Mountain Time date and the scheduled artist is not reused. MongoDB will replace this temporary storage in the database deliverable.
+- **DB/Login** - User accounts, bcrypt password hashes, hashed login-session tokens, the daily leaderboard, and the generated daily challenge schedule are saved in local, Git-ignored JSON files. They survive service restarts as long as the server's data directory remains on persistent storage; MongoDB is not yet configured. The leaderboard can be read without logging in; login is required to submit a score. The challenge is selected once per Mountain Time date and the scheduled artist is not reused.
 
 - **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 

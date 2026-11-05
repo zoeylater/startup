@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const uuid = require('uuid');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
@@ -79,8 +80,8 @@ app.post('/api/auth/create', async (req, res) => {
   }
 
   try {
-    const user = await createUser(email, password);
-    setAuthCookie(res, user.token);
+    const { user, token } = await createUser(email, password);
+    setAuthCookie(res, token);
     res.send({ email: user.email });
   } catch (error) {
     console.error('Unable to save the new user account:', error);
@@ -95,15 +96,35 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
 
-  user.token = uuid.v4();
-  setAuthCookie(res, user.token);
+  const token = uuid.v4();
+  const previousTokenHash = user.tokenHash;
+  user.tokenHash = hashAuthToken(token);
+  try {
+    await persistUsers();
+  } catch (error) {
+    user.tokenHash = previousTokenHash;
+    console.error('Unable to save the user session:', error);
+    return res.status(500).send({ msg: 'Could not save your session. Please try again.' });
+  }
+  setAuthCookie(res, token);
   res.send({ email: user.email });
 });
 
 app.delete('/api/auth/logout', async (req, res) => {
-  const user = await findUser('token', req.cookies[authCookieName]);
+  const token = req.cookies[authCookieName];
+  const user = typeof token === 'string'
+    ? await findUser('tokenHash', hashAuthToken(token))
+    : null;
   if (user) {
-    delete user.token;
+    const previousTokenHash = user.tokenHash;
+    delete user.tokenHash;
+    try {
+      await persistUsers();
+    } catch (error) {
+      user.tokenHash = previousTokenHash;
+      console.error('Unable to revoke the user session:', error);
+      return res.status(500).send({ msg: 'Could not sign out. Please try again.' });
+    }
   }
   res.clearCookie(authCookieName);
   res.status(204).end();
@@ -300,10 +321,11 @@ app.use((req, res, next) => {
 });
 
 async function createUser(email, password) {
+  const token = uuid.v4();
   const user = {
     email,
     password: await bcrypt.hash(password, 10),
-    token: uuid.v4(),
+    tokenHash: hashAuthToken(token),
   };
   users.push(user);
   try {
@@ -312,7 +334,7 @@ async function createUser(email, password) {
     users.splice(users.indexOf(user), 1);
     throw error;
   }
-  return user;
+  return { user, token };
 }
 
 async function loadUsers() {
@@ -331,11 +353,16 @@ async function loadUsers() {
     !user
     || typeof user.email !== 'string'
     || typeof user.password !== 'string'
+    || (user.tokenHash !== undefined && typeof user.tokenHash !== 'string')
   ))) {
     throw new Error('The saved user account file has an invalid format.');
   }
 
-  users.push(...savedUsers.map(({ email, password }) => ({ email, password })));
+  users.push(...savedUsers.map(({ email, password, tokenHash }) => ({
+    email,
+    password,
+    ...(tokenHash ? { tokenHash } : {}),
+  })));
 }
 
 async function loadScores() {
@@ -606,7 +633,11 @@ function persistUsers() {
   const writeUsers = async () => {
     await fs.mkdir(path.dirname(userStorePath), { recursive: true });
     const temporaryPath = `${userStorePath}.${process.pid}.tmp`;
-    const savedUsers = users.map(({ email, password }) => ({ email, password }));
+    const savedUsers = users.map(({ email, password, tokenHash }) => ({
+      email,
+      password,
+      ...(tokenHash ? { tokenHash } : {}),
+    }));
     await fs.writeFile(temporaryPath, JSON.stringify(savedUsers, null, 2), 'utf8');
     await fs.rename(temporaryPath, userStorePath);
   };
@@ -621,8 +652,15 @@ async function findUser(field, value) {
   return users.find((user) => user[field] === value) ?? null;
 }
 
+function hashAuthToken(token) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 async function verifyAuth(req, res, next) {
-  const user = await findUser('token', req.cookies[authCookieName]);
+  const token = req.cookies[authCookieName];
+  const user = typeof token === 'string'
+    ? await findUser('tokenHash', hashAuthToken(token))
+    : null;
   if (!user) {
     return res.status(401).send({ msg: 'Unauthorized' });
   }

@@ -45,7 +45,7 @@ function calculateGuessResult(submittedGuess, location, details) {
     guessLocation: submittedGuess.locationName
       || `${submittedGuess.latitude.toFixed(2)}°, ${submittedGuess.longitude.toFixed(2)}°`,
     score: Math.max(0, Math.round(1000 * (1 - distanceKm / 20000))),
-    distanceKm: Math.round(distanceKm),
+    distanceKm,
     actualCountry: details.country,
     actualCity: details.city,
     actualLatitude: location.latitude,
@@ -371,6 +371,18 @@ export default function App() {
     if (!response.ok) {
       throw new Error(data.msg || 'Authentication failed.');
     }
+    if (endpoint === '/api/auth/create') {
+      setGuessesByUser((current) => {
+        const next = { ...current };
+        delete next[data.email];
+        return next;
+      });
+      setArchiveGuessesByUser((current) => {
+        const next = { ...current };
+        delete next[data.email];
+        return next;
+      });
+    }
     setArchiveChallenge(null);
     setArchiveTrack(null);
     setDailyDate(getMountainDateKey());
@@ -646,6 +658,7 @@ export default function App() {
             path="/archives"
             element={user
               ? <Archive
+                todayDate={dailyDate}
                 playedChallenges={archiveGuesses}
                 onPlayArchive={(archive) => {
                   setArchiveChallenge(archive);
