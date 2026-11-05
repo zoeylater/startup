@@ -288,7 +288,7 @@ export default function Archive({
             </p>
           ) : (
             <p className="archive-empty-state">
-              Select a highlighted date to play that day’s challenge or revisit your result.
+              Choose a date to play its challenge or review your result.
             </p>
           )}
 
