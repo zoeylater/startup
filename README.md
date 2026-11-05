@@ -74,7 +74,7 @@ I am going to use the required technologies in the following ways:
 
 - **WebSocket** - Websocket will help with the live leaderboard. Every time a player submits their guess, it will be instantly pushed to the real-time leaderboard. 
 
-- **3rd party APIs** - The backend selects a daily track with a Deezer chart preview, matches its artist and recording metadata in MusicBrainz, and geocodes the artist's MusicBrainz origin area with OpenStreetMap Nominatim. It saves the selected challenge so all players receive the same song until midnight in the `America/Denver` timezone. The displayed target is the artist's recorded origin area, not necessarily where a specific song was written or recorded.
+- **3rd party APIs** - The backend selects a daily track with a Deezer chart preview, matches its artist and recording metadata in MusicBrainz, and geocodes the artist's MusicBrainz origin area with OpenStreetMap Nominatim. It saves the selected challenge so all players receive the same song until midnight in the `America/Denver` timezone. If those services fail or time out, a locally defined challenge keeps map guesses playable, though its audio preview may be unavailable. The displayed target is the artist's recorded origin area, not necessarily where a specific song was written or recorded.
     - Leaflet.js with OpenStreetMap tiles provides the interactive map for location guesses. Nominatim reverse geocoding labels a player's selected map location when possible.
 
 ## 🚀 Specification Deliverable

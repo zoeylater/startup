@@ -525,7 +525,11 @@ export default function App() {
   }
 
   const savedGuess = user ? guessesByUser[user] || null : null;
-  const dailyChallengeLoaded = Boolean(dailyTrack.musicMetadata && dailyTrack.preview);
+  const dailyChallengeLoaded = Boolean(
+    dailyTrack.musicMetadata
+    && Number.isFinite(dailyTrack.latitude)
+    && Number.isFinite(dailyTrack.longitude),
+  );
   const guess = savedGuess && dailyChallengeLoaded
     && guessMatchesDailyChallenge(savedGuess, dailyTrack)
     ? savedGuess

@@ -133,8 +133,18 @@ export async function fetchDailyTrack(signal) {
   if (!response.ok) {
     throw new Error(data.msg || `Could not load daily challenge (${response.status}).`);
   }
-  if (!data.musicMetadata || !data.preview || !Number.isFinite(data.latitude)) {
+  if (
+    !data.musicMetadata
+    || !Number.isFinite(data.latitude)
+    || !Number.isFinite(data.longitude)
+  ) {
     throw new Error('The service returned an incomplete daily challenge.');
   }
-  return { ...data, previewError: '' };
+  return {
+    ...data,
+    previewError: data.preview
+      ? ''
+      : data.previewError
+        || 'The song preview is temporarily unavailable. You can still make a location guess.',
+  };
 }
