@@ -5,6 +5,13 @@ const uuid = require('uuid');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const {
+  createUsedChallengeIdentifiers,
+  isUnusedDeezerCandidate,
+  isUnusedMusicBrainzArtist,
+  isUnusedRecording,
+  isUnusedChallenge,
+} = require('./dailyChallengeUniqueness');
 
 const app = express();
 const authCookieName = 'token';
@@ -474,48 +481,13 @@ async function getDailyChallenge() {
   try {
     return await promise;
   } catch (error) {
-    const challenge = dailyChallengeCache.find((entry) => entry.date === date);
-    if (challenge) {
-      console.error('Unable to persist the generated daily challenge:', error);
-      return challenge;
-    }
-
-    console.error('Unable to generate the daily challenge; using a local fallback:', error);
-    return createFallbackDailyChallenge(date);
+    console.error(`Unable to generate the daily challenge for ${date}:`, error);
+    throw error;
   } finally {
     if (dailyChallengeGeneration?.promise === promise) {
       dailyChallengeGeneration = null;
     }
   }
-}
-
-async function createFallbackDailyChallenge(date) {
-  const fallback = archives[hashString(date) % archives.length];
-  const challenge = {
-    date,
-    artistId: `fallback-${date}`,
-    title: fallback.title,
-    artist: fallback.artist,
-    city: fallback.city,
-    country: fallback.country,
-    latitude: fallback.latitude,
-    longitude: fallback.longitude,
-    musicMetadata: {
-      source: 'Local fallback',
-      title: fallback.title,
-      artist: fallback.artist,
-      release: '',
-    },
-    preview: null,
-    previewError: 'The song preview is temporarily unavailable. You can still make a location guess.',
-  };
-  dailyChallengeCache.push(challenge);
-  try {
-    await persistDailyChallenges();
-  } catch (error) {
-    console.error('Unable to save the fallback daily challenge:', error);
-  }
-  return challenge;
 }
 
 async function createDailyChallenge(date) {
@@ -528,15 +500,22 @@ async function createDailyChallenge(date) {
   }
 
   const chart = await chartResponse.json();
-  const usedArtistIds = new Set(dailyChallengeCache.map((challenge) => challenge.artistId));
-  const candidates = (chart.data || []).filter((track) => (
+  if (chart.error) {
+    throw new Error(`Deezer chart request failed: ${chart.error.message || 'unknown error'}.`);
+  }
+  const usedIdentifiers = createUsedChallengeIdentifiers([
+    ...archives,
+    ...dailyChallengeCache,
+  ]);
+  const candidates = (Array.isArray(chart.data) ? chart.data : []).filter((track) => (
     track.preview
+    && track.id
     && track.artist?.id
     && track.artist?.name
-    && !usedArtistIds.has(String(track.artist.id))
+    && isUnusedDeezerCandidate(track, usedIdentifiers)
   ));
   if (candidates.length === 0) {
-    throw new Error('Deezer did not provide any unused artists with previews.');
+    throw new Error('Deezer did not provide any unused tracks with previews.');
   }
 
   const startIndex = hashString(date) % candidates.length;
@@ -545,58 +524,100 @@ async function createDailyChallenge(date) {
     ...candidates.slice(0, startIndex),
   ];
 
+  const candidateFailures = [];
   for (const track of orderedCandidates) {
-    const artist = await findMusicBrainzArtist(track.artist.name, signal);
-    if (!artist?.['begin-area']?.name) {
-      continue;
+    let challenge;
+    try {
+      const artist = await findMusicBrainzArtist(track.artist.name, signal);
+      if (
+        !artist?.['begin-area']?.name
+        || !isUnusedMusicBrainzArtist(artist, usedIdentifiers)
+      ) {
+        continue;
+      }
+      const country = artist.area?.name || artist.country;
+      if (!country) {
+        continue;
+      }
+      const origin = await geocodeArtistOrigin(
+        artist['begin-area'].name,
+        country,
+        artist.country,
+        signal,
+      );
+      if (!origin) {
+        continue;
+      }
+
+      const recording = await findMusicBrainzRecording(track.title, artist.id, signal);
+      if (!isUnusedRecording(recording, usedIdentifiers)) {
+        continue;
+      }
+
+      challenge = {
+        date,
+        artistId: String(track.artist.id),
+        title: recording?.title || track.title,
+        artist: artist.name,
+        city: artist['begin-area'].name,
+        country,
+        latitude: origin.latitude,
+        longitude: origin.longitude,
+        musicMetadata: {
+          source: 'MusicBrainz',
+          artistId: String(artist.id),
+          recordingId: recording?.id || '',
+          title: recording?.title || track.title,
+          artist: artist.name,
+          release: recording?.releases?.[0]?.title || track.album?.title || '',
+          url: recording?.id ? `https://musicbrainz.org/recording/${recording.id}` : '',
+        },
+        preview: {
+          provider: 'Deezer',
+          trackId: track.id,
+          durationSeconds: 30,
+          url: track.preview,
+          trackUrl: track.link,
+          albumCover: track.album?.cover_medium || track.album?.cover || '',
+        },
+      };
+    } catch (error) {
+      if (signal.aborted) {
+        throw error;
+      }
+      candidateFailures.push(error);
+      console.warn(
+        `Skipping Deezer track "${track.title}" by ${track.artist.name}; metadata or geocoding failed:`,
+        error,
+      );
     }
-    const country = artist.area?.name || artist.country;
-    if (!country) {
-      continue;
-    }
-    const origin = await geocodeArtistOrigin(
-      artist['begin-area'].name,
-      country,
-      artist.country,
-      signal,
-    );
-    if (!origin) {
+
+    if (!challenge) {
       continue;
     }
 
-    const recording = await findMusicBrainzRecording(track.title, artist.id, signal);
-    const challenge = {
-      date,
-      artistId: String(track.artist.id),
-      title: recording?.title || track.title,
-      artist: artist.name,
-      city: artist['begin-area'].name,
-      country,
-      latitude: origin.latitude,
-      longitude: origin.longitude,
-      musicMetadata: {
-        source: 'MusicBrainz',
-        recordingId: recording?.id || '',
-        title: recording?.title || track.title,
-        artist: artist.name,
-        release: recording?.releases?.[0]?.title || track.album?.title || '',
-        url: recording?.id ? `https://musicbrainz.org/recording/${recording.id}` : '',
-      },
-      preview: {
-        provider: 'Deezer',
-        trackId: track.id,
-        durationSeconds: 30,
-        url: track.preview,
-        trackUrl: track.link,
-        albumCover: track.album?.cover_medium || track.album?.cover || '',
-      },
-    };
+    const latestUsedIdentifiers = createUsedChallengeIdentifiers([
+      ...archives,
+      ...dailyChallengeCache,
+    ]);
+    if (!isUnusedChallenge(challenge, latestUsedIdentifiers)) {
+      continue;
+    }
+
     dailyChallengeCache.push(challenge);
-    await persistDailyChallenges();
+    try {
+      await persistDailyChallenges();
+    } catch (error) {
+      dailyChallengeCache.splice(dailyChallengeCache.indexOf(challenge), 1);
+      throw error;
+    }
     return challenge;
   }
 
-  throw new Error('No unused Deezer artist had a matching MusicBrainz origin.');
+  const reason = candidateFailures.length
+    ? ` All ${candidateFailures.length} candidate lookups failed.`
+    : '';
+  throw new Error(`No unused Deezer track could be verified with MusicBrainz and Nominatim.${reason}`);
 }
 
 async function findMusicBrainzArtist(name, signal) {
@@ -644,7 +665,7 @@ async function geocodeArtistOrigin(city, country, countryCode, signal) {
   }
   const response = await scheduleNominatimRequest(url, signal);
   if (!response.ok) {
-    return null;
+    throw new Error(`Nominatim geocoding request failed (${response.status}).`);
   }
   const results = await response.json();
   const latitude = Number(results[0]?.lat);

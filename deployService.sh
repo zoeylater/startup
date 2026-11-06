@@ -26,10 +26,10 @@ cp service/*.js build # move the back end service to the target distribution
 cp service/*.json build
 
 # Step 2
-printf "\n----> Clearing out previous distribution on the target\n"
+printf "\n----> Clearing out previous distribution on the target while preserving saved data\n"
 ssh -i "$key" ubuntu@$hostname << ENDSSH
-rm -rf services/${service}
 mkdir -p services/${service}
+find services/${service} -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf -- {} +
 ENDSSH
 
 # Step 3
