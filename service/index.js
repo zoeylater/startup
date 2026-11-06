@@ -12,6 +12,11 @@ const {
   isUnusedRecording,
   isUnusedChallenge,
 } = require('./dailyChallengeUniqueness');
+const {
+  getScheduledDailyChallenge,
+  validateDailyChallengeSchedule,
+} = require('./dailyChallengeSchedule');
+const dailyChallengeSchedule = require('./daily-challenge-schedule.json');
 
 const app = express();
 const authCookieName = 'token';
@@ -26,7 +31,6 @@ let scores = [];
 let scoreStoreDate = getMountainDateKey();
 const reverseGeocodeCache = new Map();
 const dailyChallengeCache = [];
-let dailyChallengeGeneration = null;
 let nominatimRequestQueue = Promise.resolve();
 let lastNominatimRequestAt = 0;
 let musicBrainzRequestQueue = Promise.resolve();
@@ -143,11 +147,20 @@ app.get('/api/user/me', verifyAuth, (req, res) => {
 
 app.get('/api/daily-challenge', verifyAuth, async (_req, res) => {
   try {
-    res.send(await getDailyChallenge());
+    const challenge = await getDailyChallenge();
+    if (!challenge) {
+      return res.status(404).send({
+        msg: `No daily challenge is scheduled for ${getMountainDateKey()}.`,
+      });
+    }
+    res.send(challenge);
   } catch (error) {
-    console.error('Unable to prepare the daily challenge:', error);
+    console.error(
+      `Daily challenge endpoint failed for ${getMountainDateKey()}:`,
+      error,
+    );
     res.status(503).send({
-      msg: 'A new daily challenge is temporarily unavailable. Please try again shortly.',
+      msg: 'Today’s scheduled challenge is temporarily unavailable. Please try again shortly.',
     });
   }
 });
@@ -195,7 +208,7 @@ app.get('/api/archives', verifyAuth, async (req, res) => {
     archive.date >= start && archive.date <= end
   ));
   const today = getMountainDateKey();
-  const scheduledArchives = dailyChallengeCache.filter((challenge) => (
+  const scheduledArchives = [...dailyChallengeCache, ...dailyChallengeSchedule].filter((challenge) => (
     challenge.date >= start && challenge.date <= end
   ));
   for (const challenge of scheduledArchives) {
@@ -215,11 +228,13 @@ app.get('/api/archives', verifyAuth, async (req, res) => {
   ) {
     try {
       const challenge = await getDailyChallenge();
-      const existingIndex = matchingArchives.findIndex((entry) => entry.date === today);
-      if (existingIndex >= 0) {
-        matchingArchives[existingIndex] = toArchiveEntry(challenge);
-      } else {
-        matchingArchives.push(toArchiveEntry(challenge));
+      if (challenge) {
+        const existingIndex = matchingArchives.findIndex((entry) => entry.date === today);
+        if (existingIndex >= 0) {
+          matchingArchives[existingIndex] = toArchiveEntry(challenge);
+        } else {
+          matchingArchives.push(toArchiveEntry(challenge));
+        }
       }
     } catch (error) {
       console.error('Unable to add today’s challenge to the archive:', error);
@@ -468,26 +483,11 @@ async function loadDailyChallenges() {
 
 async function getDailyChallenge() {
   const date = getMountainDateKey();
-  const existing = dailyChallengeCache.find((challenge) => challenge.date === date);
-  if (existing) {
-    return existing;
-  }
-  if (dailyChallengeGeneration?.date === date) {
-    return dailyChallengeGeneration.promise;
-  }
-
-  const promise = createDailyChallenge(date);
-  dailyChallengeGeneration = { date, promise };
-  try {
-    return await promise;
-  } catch (error) {
-    console.error(`Unable to generate the daily challenge for ${date}:`, error);
-    throw error;
-  } finally {
-    if (dailyChallengeGeneration?.promise === promise) {
-      dailyChallengeGeneration = null;
-    }
-  }
+  const scheduled = dailyChallengeSchedule.find((challenge) => challenge.date === date);
+  console.info(
+    `[daily-challenge] Mountain Time date=${date}; prebuilt challenge exists=${Boolean(scheduled)}`,
+  );
+  return getScheduledDailyChallenge(dailyChallengeSchedule, date);
 }
 
 async function createDailyChallenge(date) {
@@ -495,25 +495,45 @@ async function createDailyChallenge(date) {
   const chartUrl = new URL('https://api.deezer.com/chart/0/tracks');
   chartUrl.searchParams.set('limit', '100');
   const chartResponse = await fetch(chartUrl, { signal });
+  console.info(
+    `[daily-challenge] Deezer chart response status=${chartResponse.status}.`,
+  );
   if (!chartResponse.ok) {
     throw new Error(`Deezer chart request failed (${chartResponse.status}).`);
   }
 
   const chart = await chartResponse.json();
   if (chart.error) {
+    console.error('[daily-challenge] Deezer returned an API error:', chart.error);
     throw new Error(`Deezer chart request failed: ${chart.error.message || 'unknown error'}.`);
   }
+  const deezerTracks = Array.isArray(chart.data) ? chart.data : [];
+  console.info(`[daily-challenge] Deezer returned ${deezerTracks.length} tracks.`);
   const usedIdentifiers = createUsedChallengeIdentifiers([
     ...archives,
     ...dailyChallengeCache,
   ]);
-  const candidates = (Array.isArray(chart.data) ? chart.data : []).filter((track) => (
-    track.preview
-    && track.id
-    && track.artist?.id
-    && track.artist?.name
-    && isUnusedDeezerCandidate(track, usedIdentifiers)
-  ));
+  const candidates = [];
+  for (const track of deezerTracks) {
+    const label = `"${track.title || 'Untitled'}" by ${track.artist?.name || 'Unknown artist'}`;
+    let skipReason = '';
+    if (!track.preview) {
+      skipReason = 'no preview';
+    } else if (!track.id) {
+      skipReason = 'missing Deezer track ID';
+    } else if (!track.artist?.id || !track.artist?.name) {
+      skipReason = 'missing Deezer artist ID or name';
+    } else if (!isUnusedDeezerCandidate(track, usedIdentifiers)) {
+      skipReason = 'track ID or artist was already used';
+    }
+
+    if (skipReason) {
+      console.info(`[daily-challenge] Skipping Deezer candidate ${label}: ${skipReason}.`);
+    } else {
+      candidates.push(track);
+    }
+  }
+  console.info(`[daily-challenge] ${candidates.length} unused Deezer candidates remain.`);
   if (candidates.length === 0) {
     throw new Error('Deezer did not provide any unused tracks with previews.');
   }
@@ -526,17 +546,25 @@ async function createDailyChallenge(date) {
 
   const candidateFailures = [];
   for (const track of orderedCandidates) {
+    const candidateLabel = `"${track.title}" by ${track.artist.name}`;
     let challenge;
     try {
       const artist = await findMusicBrainzArtist(track.artist.name, signal);
-      if (
-        !artist?.['begin-area']?.name
-        || !isUnusedMusicBrainzArtist(artist, usedIdentifiers)
-      ) {
+      if (!artist) {
+        console.info(`[daily-challenge] Skipping ${candidateLabel}: no matching MusicBrainz artist.`);
+        continue;
+      }
+      if (!artist['begin-area']?.name) {
+        console.info(`[daily-challenge] Skipping ${candidateLabel}: MusicBrainz artist has no begin area.`);
+        continue;
+      }
+      if (!isUnusedMusicBrainzArtist(artist, usedIdentifiers)) {
+        console.info(`[daily-challenge] Skipping ${candidateLabel}: MusicBrainz artist was already used.`);
         continue;
       }
       const country = artist.area?.name || artist.country;
       if (!country) {
+        console.info(`[daily-challenge] Skipping ${candidateLabel}: MusicBrainz artist has no country.`);
         continue;
       }
       const origin = await geocodeArtistOrigin(
@@ -546,11 +574,15 @@ async function createDailyChallenge(date) {
         signal,
       );
       if (!origin) {
+        console.info(`[daily-challenge] Skipping ${candidateLabel}: Nominatim returned no valid coordinates.`);
         continue;
       }
 
       const recording = await findMusicBrainzRecording(track.title, artist.id, signal);
       if (!isUnusedRecording(recording, usedIdentifiers)) {
+        console.info(
+          `[daily-challenge] Skipping ${candidateLabel}: MusicBrainz recording ${recording.id} was already used.`,
+        );
         continue;
       }
 
@@ -587,7 +619,7 @@ async function createDailyChallenge(date) {
       }
       candidateFailures.push(error);
       console.warn(
-        `Skipping Deezer track "${track.title}" by ${track.artist.name}; metadata or geocoding failed:`,
+        `[daily-challenge] Skipping ${candidateLabel}; MusicBrainz or Nominatim lookup failed:`,
         error,
       );
     }
@@ -601,6 +633,9 @@ async function createDailyChallenge(date) {
       ...dailyChallengeCache,
     ]);
     if (!isUnusedChallenge(challenge, latestUsedIdentifiers)) {
+      console.warn(
+        `[daily-challenge] Skipping ${candidateLabel}: identifiers became used before save.`,
+      );
       continue;
     }
 
@@ -609,15 +644,23 @@ async function createDailyChallenge(date) {
       await persistDailyChallenges();
     } catch (error) {
       dailyChallengeCache.splice(dailyChallengeCache.indexOf(challenge), 1);
+      console.error(`[daily-challenge] Failed to persist challenge for ${date}:`, error);
       throw error;
     }
+    console.info(
+      `[daily-challenge] Saved new challenge for ${date}: ${candidateLabel} (Deezer track ${challenge.preview.trackId}).`,
+    );
     return challenge;
   }
 
   const reason = candidateFailures.length
     ? ` All ${candidateFailures.length} candidate lookups failed.`
     : '';
-  throw new Error(`No unused Deezer track could be verified with MusicBrainz and Nominatim.${reason}`);
+  const error = new Error(
+    `No unused Deezer track could be verified with MusicBrainz and Nominatim.${reason}`,
+  );
+  console.error(`[daily-challenge] Generation exhausted candidates for ${date}:`, error);
+  throw error;
 }
 
 async function findMusicBrainzArtist(name, signal) {
@@ -626,9 +669,14 @@ async function findMusicBrainzArtist(name, signal) {
   url.searchParams.set('fmt', 'json');
   url.searchParams.set('limit', '5');
   const data = await fetchMusicBrainzJson(url, signal);
-  return data.artists?.find((artist) => (
+  const artists = Array.isArray(data.artists) ? data.artists : [];
+  const match = artists.find((artist) => (
     normalizeMusicText(artist.name) === normalizeMusicText(name)
   ));
+  console.info(
+    `[daily-challenge] MusicBrainz artist search "${name}": ${artists.length} results; exact match=${Boolean(match)}.`,
+  );
+  return match;
 }
 
 async function findMusicBrainzRecording(title, artistId, signal) {
@@ -640,17 +688,28 @@ async function findMusicBrainzRecording(title, artistId, signal) {
   url.searchParams.set('fmt', 'json');
   url.searchParams.set('limit', '5');
   const data = await fetchMusicBrainzJson(url, signal);
-  return data.recordings?.find((recording) => (
+  const recordings = Array.isArray(data.recordings) ? data.recordings : [];
+  const match = recordings.find((recording) => (
     normalizeMusicText(recording.title) === normalizeMusicText(title)
   ));
+  console.info(
+    `[daily-challenge] MusicBrainz recording search "${title}": ${recordings.length} results; exact match=${Boolean(match)}.`,
+  );
+  return match;
 }
 
 function fetchMusicBrainzJson(url, signal) {
   return scheduleMusicBrainzRequest(url, signal).then(async (response) => {
+    console.info(`[daily-challenge] MusicBrainz response status=${response.status} for ${url.pathname}.`);
     if (!response.ok) {
       throw new Error(`MusicBrainz request failed (${response.status}).`);
     }
-    return response.json();
+    try {
+      return await response.json();
+    } catch (error) {
+      console.error(`[daily-challenge] MusicBrainz returned invalid JSON for ${url.pathname}:`, error);
+      throw error;
+    }
   });
 }
 
@@ -664,15 +723,22 @@ async function geocodeArtistOrigin(city, country, countryCode, signal) {
     url.searchParams.set('countrycodes', countryCode.toLowerCase());
   }
   const response = await scheduleNominatimRequest(url, signal);
+  console.info(`[daily-challenge] Nominatim geocoding response status=${response.status}.`);
   if (!response.ok) {
     throw new Error(`Nominatim geocoding request failed (${response.status}).`);
   }
   const results = await response.json();
+  if (!Array.isArray(results)) {
+    console.warn('[daily-challenge] Nominatim returned an unexpected response format.');
+    return null;
+  }
   const latitude = Number(results[0]?.lat);
   const longitude = Number(results[0]?.lon);
-  return Number.isFinite(latitude) && Number.isFinite(longitude)
+  const origin = Number.isFinite(latitude) && Number.isFinite(longitude)
     ? { latitude, longitude }
     : null;
+  console.info(`[daily-challenge] Nominatim returned ${results.length} results; valid coordinates=${Boolean(origin)}.`);
+  return origin;
 }
 
 function normalizeMusicText(value) {
@@ -696,7 +762,7 @@ function toArchiveEntry(challenge) {
     country: challenge.country,
     latitude: challenge.latitude,
     longitude: challenge.longitude,
-    albumCover: challenge.preview?.albumCover || '',
+    albumCover: challenge.preview?.albumCover || challenge.albumCover || '',
   };
 }
 
@@ -847,6 +913,7 @@ function scheduleMusicBrainzRequest(url, signal) {
 
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
 Promise.all([loadUsers(), loadScores(), loadDailyChallenges()]).then(() => {
+  validateDailyChallengeSchedule(dailyChallengeSchedule);
   app.listen(port, () => {
     console.log(`Listening on port ${port}`);
   });
