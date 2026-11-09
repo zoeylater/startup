@@ -1,6 +1,8 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
+const { createServer } = require('node:http');
+const { WebSocket, WebSocketServer } = require('ws');
 const uuid = require('uuid');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
@@ -19,6 +21,8 @@ const {
 const dailyChallengeSchedule = require('./daily-challenge-schedule.json');
 
 const app = express();
+const server = createServer(app);
+const webSocketServer = new WebSocketServer({ noServer: true });
 const authCookieName = 'token';
 const users = [];
 const publicAssetsPath = path.join(__dirname, 'public');
@@ -343,13 +347,15 @@ app.post('/api/score', verifyAuth, async (req, res) => {
   scores = updateScores({ name: getPublicName(user.email), score });
   try {
     await persistScores();
-    res.send(getPublicScores());
   } catch (error) {
     scores = previousScores;
     scoreStoreDate = previousDate;
     console.error('Unable to save the daily leaderboard:', error);
-    res.status(500).send({ msg: 'Could not save your score. Please try again.' });
+    return res.status(500).send({ msg: 'Could not save your score. Please try again.' });
   }
+  const publicScores = getPublicScores();
+  broadcastLeaderboard(publicScores);
+  res.send(publicScores);
 });
 
 app.get('/api/health', (req, res) => {
@@ -820,11 +826,14 @@ function hashAuthToken(token) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-async function verifyAuth(req, res, next) {
-  const token = req.cookies[authCookieName];
-  const user = typeof token === 'string'
-    ? await findUser('tokenHash', hashAuthToken(token))
+async function findAuthenticatedUser(token) {
+  return typeof token === 'string'
+    ? findUser('tokenHash', hashAuthToken(token))
     : null;
+}
+
+async function verifyAuth(req, res, next) {
+  const user = await findAuthenticatedUser(req.cookies[authCookieName]);
   if (!user) {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
@@ -857,6 +866,33 @@ function getPublicScores() {
     name: getPublicName(name),
     score,
   }));
+}
+
+function broadcastLeaderboard(publicScores) {
+  const message = JSON.stringify({
+    event: 'leaderboard:update',
+    scores: publicScores,
+  });
+  for (const client of webSocketServer.clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message, (error) => {
+        if (error) {
+          console.error('Unable to send a leaderboard update:', error);
+        }
+      });
+    }
+  }
+}
+
+function getAuthTokenFromCookieHeader(cookieHeader) {
+  if (typeof cookieHeader !== 'string') {
+    return null;
+  }
+  const authCookie = cookieHeader
+    .split(';')
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${authCookieName}=`));
+  return authCookie ? authCookie.slice(authCookieName.length + 1) : null;
 }
 
 function isDateKey(value) {
@@ -912,9 +948,37 @@ function scheduleMusicBrainzRequest(url, signal) {
 }
 
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
+server.on('upgrade', async (request, socket, head) => {
+  if (new URL(request.url, 'http://localhost').pathname !== '/ws') {
+    socket.destroy();
+    return;
+  }
+
+  try {
+    const token = getAuthTokenFromCookieHeader(request.headers.cookie);
+    const user = await findAuthenticatedUser(token);
+    if (!user) {
+      socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+      return;
+    }
+
+    webSocketServer.handleUpgrade(request, socket, head, (webSocket) => {
+      webSocketServer.emit('connection', webSocket, request);
+    });
+  } catch (error) {
+    console.error('Unable to authenticate a WebSocket connection:', error);
+    socket.destroy();
+  }
+});
+webSocketServer.on('connection', (webSocket) => {
+  webSocket.on('error', (error) => {
+    console.error('Leaderboard WebSocket connection failed:', error);
+  });
+});
+
 Promise.all([loadUsers(), loadScores(), loadDailyChallenges()]).then(() => {
   validateDailyChallengeSchedule(dailyChallengeSchedule);
-  app.listen(port, () => {
+  server.listen(port, () => {
     console.log(`Listening on port ${port}`);
   });
 }).catch((error) => {

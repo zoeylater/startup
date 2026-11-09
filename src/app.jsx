@@ -242,6 +242,77 @@ export default function App() {
   }, [dailyDate]);
 
   useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    let shouldReconnect = true;
+    let reconnectTimeout;
+    let reconnectDelay = 1000;
+    let socket;
+
+    const connect = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      const currentSocket = socket;
+
+      currentSocket.addEventListener('open', () => {
+        reconnectDelay = 1000;
+        refreshScores()
+          .then(() => setServiceError(''))
+          .catch((error) => {
+            setServiceError(
+              error instanceof Error ? error.message : 'Could not refresh the leaderboard.',
+            );
+          });
+      });
+      currentSocket.addEventListener('message', (messageEvent) => {
+        let message;
+        try {
+          message = JSON.parse(messageEvent.data);
+        } catch (error) {
+          console.error('Received an invalid leaderboard WebSocket message:', error);
+          return;
+        }
+
+        if (message?.event !== 'leaderboard:update') {
+          return;
+        }
+        if (
+          !Array.isArray(message.scores)
+          || !message.scores.every((entry) => (
+            entry
+            && typeof entry.name === 'string'
+            && Number.isFinite(entry.score)
+          ))
+        ) {
+          console.error('Received invalid leaderboard scores over WebSocket.');
+          return;
+        }
+        setScores(message.scores);
+        setServiceError('');
+      });
+      currentSocket.addEventListener('close', () => {
+        if (!shouldReconnect) {
+          return;
+        }
+        reconnectTimeout = window.setTimeout(connect, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+      });
+      currentSocket.addEventListener('error', () => {
+        currentSocket.close();
+      });
+    };
+
+    connect();
+    return () => {
+      shouldReconnect = false;
+      window.clearTimeout(reconnectTimeout);
+      socket?.close();
+    };
+  }, [user]);
+
+  useEffect(() => {
     let active = true;
     (async () => {
       try {
