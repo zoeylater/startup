@@ -7,6 +7,7 @@ const uuid = require('uuid');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { closeDatabase, connectDatabase } = require('./database');
 const {
   createUsedChallengeIdentifiers,
   isUnusedDeezerCandidate,
@@ -24,17 +25,12 @@ const app = express();
 const server = createServer(app);
 const webSocketServer = new WebSocketServer({ noServer: true });
 const authCookieName = 'token';
-const users = [];
 const publicAssetsPath = path.join(__dirname, 'public');
 const frontendIndexPath = path.join(publicAssetsPath, 'index.html');
-const userStorePath = path.join(__dirname, 'data', 'users.json');
-const scoreStorePath = path.join(__dirname, 'data', 'scores.json');
-const dailyChallengeStorePath = path.join(__dirname, 'data', 'daily-challenges.json');
-let userWriteQueue = Promise.resolve();
-let scores = [];
-let scoreStoreDate = getMountainDateKey();
+let usersCollection;
+let leaderboardsCollection;
+let dailyChallengesCollection;
 const reverseGeocodeCache = new Map();
-const dailyChallengeCache = [];
 let nominatimRequestQueue = Promise.resolve();
 let lastNominatimRequestAt = 0;
 let musicBrainzRequestQueue = Promise.resolve();
@@ -99,30 +95,33 @@ app.post('/api/auth/create', async (req, res) => {
     setAuthCookie(res, token);
     res.send({ email: user.email });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).send({ msg: 'Existing user' });
+    }
     console.error('Unable to save the new user account:', error);
     res.status(500).send({ msg: 'Could not save your account. Please try again.' });
   }
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await findUser('email', email);
-  if (!user || typeof password !== 'string' || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).send({ msg: 'Unauthorized' });
-  }
-
-  const token = uuid.v4();
-  const previousTokenHash = user.tokenHash;
-  user.tokenHash = hashAuthToken(token);
   try {
-    await persistUsers();
+    const { email, password } = req.body;
+    const user = await findUser('email', email);
+    if (!user || typeof password !== 'string' || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).send({ msg: 'Unauthorized' });
+    }
+
+    const token = uuid.v4();
+    await usersCollection.updateOne(
+      { _id: user._id },
+      { $set: { tokenHash: hashAuthToken(token) } },
+    );
+    setAuthCookie(res, token);
+    res.send({ email: user.email });
   } catch (error) {
-    user.tokenHash = previousTokenHash;
-    console.error('Unable to save the user session:', error);
-    return res.status(500).send({ msg: 'Could not save your session. Please try again.' });
+    console.error('Unable to start the user session:', error);
+    res.status(500).send({ msg: 'Could not save your session. Please try again.' });
   }
-  setAuthCookie(res, token);
-  res.send({ email: user.email });
 });
 
 app.delete('/api/auth/logout', async (req, res) => {
@@ -131,12 +130,12 @@ app.delete('/api/auth/logout', async (req, res) => {
     ? await findUser('tokenHash', hashAuthToken(token))
     : null;
   if (user) {
-    const previousTokenHash = user.tokenHash;
-    delete user.tokenHash;
     try {
-      await persistUsers();
+      await usersCollection.updateOne(
+        { _id: user._id },
+        { $unset: { tokenHash: '' } },
+      );
     } catch (error) {
-      user.tokenHash = previousTokenHash;
       console.error('Unable to revoke the user session:', error);
       return res.status(500).send({ msg: 'Could not sign out. Please try again.' });
     }
@@ -212,7 +211,10 @@ app.get('/api/archives', verifyAuth, async (req, res) => {
     archive.date >= start && archive.date <= end
   ));
   const today = getMountainDateKey();
-  const scheduledArchives = [...dailyChallengeCache, ...dailyChallengeSchedule].filter((challenge) => (
+  const savedChallenges = await dailyChallengesCollection.find({
+    date: { $gte: start, $lte: end },
+  }).toArray();
+  const scheduledArchives = [...savedChallenges, ...dailyChallengeSchedule].filter((challenge) => (
     challenge.date >= start && challenge.date <= end
   ));
   for (const challenge of scheduledArchives) {
@@ -322,12 +324,14 @@ app.get('/api/music/deezer/search', async (req, res, next) => {
   }
 });
 
-app.get('/api/scores', (_req, res) => {
-  if (scoreStoreDate !== getMountainDateKey()) {
-    scoreStoreDate = getMountainDateKey();
-    scores = [];
+app.get('/api/scores', async (_req, res) => {
+  try {
+    const leaderboard = await leaderboardsCollection.findOne({ date: getMountainDateKey() });
+    res.send(getPublicScores(leaderboard?.scores));
+  } catch (error) {
+    console.error('Unable to load the daily leaderboard:', error);
+    res.status(503).send({ msg: 'Could not load scores. Please try again.' });
   }
-  res.send(getPublicScores());
 });
 
 app.post('/api/score', verifyAuth, async (req, res) => {
@@ -337,23 +341,39 @@ app.post('/api/score', verifyAuth, async (req, res) => {
   }
 
   const date = getMountainDateKey();
-  const previousScores = scores;
-  const previousDate = scoreStoreDate;
-  if (date !== scoreStoreDate) {
-    scores = [];
-    scoreStoreDate = date;
-  }
   const user = req.authenticatedUser;
-  scores = updateScores({ name: getPublicName(user.email), score });
+  const newScore = { name: getPublicName(user.email), score };
   try {
-    await persistScores();
+    await leaderboardsCollection.updateOne(
+      { date },
+      [{
+        $set: {
+          scores: {
+            $slice: [
+              {
+                $sortArray: {
+                  input: {
+                    $concatArrays: [
+                      { $ifNull: ['$scores', []] },
+                      { $literal: [newScore] },
+                    ],
+                  },
+                  sortBy: { score: -1 },
+                },
+              },
+              10,
+            ],
+          },
+        },
+      }],
+      { upsert: true },
+    );
   } catch (error) {
-    scores = previousScores;
-    scoreStoreDate = previousDate;
     console.error('Unable to save the daily leaderboard:', error);
     return res.status(500).send({ msg: 'Could not save your score. Please try again.' });
   }
-  const publicScores = getPublicScores();
+  const leaderboard = await leaderboardsCollection.findOne({ date });
+  const publicScores = getPublicScores(leaderboard?.scores);
   broadcastLeaderboard(publicScores);
   res.send(publicScores);
 });
@@ -388,25 +408,33 @@ async function createUser(email, password) {
     password: await bcrypt.hash(password, 10),
     tokenHash: hashAuthToken(token),
   };
-  users.push(user);
-  try {
-    await persistUsers();
-  } catch (error) {
-    users.splice(users.indexOf(user), 1);
-    throw error;
-  }
+  await usersCollection.insertOne(user);
   return { user, token };
 }
 
-async function loadUsers() {
-  let contents;
+async function migrateLegacyData() {
+  await Promise.all([
+    migrateLegacyUsers(),
+    migrateLegacyScores(),
+    migrateLegacyDailyChallenges(),
+  ]);
+}
+
+async function readLegacyData(fileName) {
   try {
-    contents = await fs.readFile(userStorePath, 'utf8');
+    return await fs.readFile(path.join(__dirname, 'data', fileName), 'utf8');
   } catch (error) {
     if (error.code === 'ENOENT') {
-      return;
+      return null;
     }
     throw error;
+  }
+}
+
+async function migrateLegacyUsers() {
+  const contents = await readLegacyData('users.json');
+  if (contents === null) {
+    return;
   }
 
   const savedUsers = JSON.parse(contents);
@@ -419,22 +447,25 @@ async function loadUsers() {
     throw new Error('The saved user account file has an invalid format.');
   }
 
-  users.push(...savedUsers.map(({ email, password, tokenHash }) => ({
-    email,
-    password,
-    ...(tokenHash ? { tokenHash } : {}),
-  })));
+  for (const { email, password, tokenHash } of savedUsers) {
+    await usersCollection.updateOne(
+      { email },
+      {
+        $setOnInsert: {
+          email,
+          password,
+          ...(tokenHash ? { tokenHash } : {}),
+        },
+      },
+      { upsert: true },
+    );
+  }
 }
 
-async function loadScores() {
-  let contents;
-  try {
-    contents = await fs.readFile(scoreStorePath, 'utf8');
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return;
-    }
-    throw error;
+async function migrateLegacyScores() {
+  const contents = await readLegacyData('scores.json');
+  if (contents === null) {
+    return;
   }
 
   const savedScores = JSON.parse(contents);
@@ -452,21 +483,17 @@ async function loadScores() {
     throw new Error('The saved leaderboard file has an invalid format.');
   }
 
-  if (savedScores.date === getMountainDateKey()) {
-    scoreStoreDate = savedScores.date;
-    scores = savedScores.scores.slice(0, 10);
-  }
+  await leaderboardsCollection.updateOne(
+    { date: savedScores.date },
+    { $setOnInsert: { date: savedScores.date, scores: savedScores.scores.slice(0, 10) } },
+    { upsert: true },
+  );
 }
 
-async function loadDailyChallenges() {
-  let contents;
-  try {
-    contents = await fs.readFile(dailyChallengeStorePath, 'utf8');
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return;
-    }
-    throw error;
+async function migrateLegacyDailyChallenges() {
+  const contents = await readLegacyData('daily-challenges.json');
+  if (contents === null) {
+    return;
   }
 
   const savedChallenges = JSON.parse(contents);
@@ -484,7 +511,13 @@ async function loadDailyChallenges() {
     throw new Error('The saved daily challenge file has an invalid format.');
   }
 
-  dailyChallengeCache.push(...savedChallenges);
+  for (const challenge of savedChallenges) {
+    await dailyChallengesCollection.updateOne(
+      { date: challenge.date },
+      { $setOnInsert: challenge },
+      { upsert: true },
+    );
+  }
 }
 
 async function getDailyChallenge() {
@@ -515,9 +548,10 @@ async function createDailyChallenge(date) {
   }
   const deezerTracks = Array.isArray(chart.data) ? chart.data : [];
   console.info(`[daily-challenge] Deezer returned ${deezerTracks.length} tracks.`);
+  const savedChallenges = await dailyChallengesCollection.find({}).toArray();
   const usedIdentifiers = createUsedChallengeIdentifiers([
     ...archives,
-    ...dailyChallengeCache,
+    ...savedChallenges,
   ]);
   const candidates = [];
   for (const track of deezerTracks) {
@@ -634,9 +668,10 @@ async function createDailyChallenge(date) {
       continue;
     }
 
+    const latestSavedChallenges = await dailyChallengesCollection.find({}).toArray();
     const latestUsedIdentifiers = createUsedChallengeIdentifiers([
       ...archives,
-      ...dailyChallengeCache,
+      ...latestSavedChallenges,
     ]);
     if (!isUnusedChallenge(challenge, latestUsedIdentifiers)) {
       console.warn(
@@ -645,14 +680,7 @@ async function createDailyChallenge(date) {
       continue;
     }
 
-    dailyChallengeCache.push(challenge);
-    try {
-      await persistDailyChallenges();
-    } catch (error) {
-      dailyChallengeCache.splice(dailyChallengeCache.indexOf(challenge), 1);
-      console.error(`[daily-challenge] Failed to persist challenge for ${date}:`, error);
-      throw error;
-    }
+    await dailyChallengesCollection.insertOne(challenge);
     console.info(
       `[daily-challenge] Saved new challenge for ${date}: ${candidateLabel} (Deezer track ${challenge.preview.trackId}).`,
     );
@@ -772,54 +800,11 @@ function toArchiveEntry(challenge) {
   };
 }
 
-function persistDailyChallenges() {
-  const writeChallenges = async () => {
-    await fs.mkdir(path.dirname(dailyChallengeStorePath), { recursive: true });
-    const temporaryPath = `${dailyChallengeStorePath}.${process.pid}.tmp`;
-    await fs.writeFile(
-      temporaryPath,
-      JSON.stringify(dailyChallengeCache, null, 2),
-      'utf8',
-    );
-    await fs.rename(temporaryPath, dailyChallengeStorePath);
-  };
-  userWriteQueue = userWriteQueue.then(writeChallenges, writeChallenges);
-  return userWriteQueue;
-}
-
-function persistScores() {
-  const writeScores = async () => {
-    await fs.mkdir(path.dirname(scoreStorePath), { recursive: true });
-    const temporaryPath = `${scoreStorePath}.${process.pid}.tmp`;
-    const savedScores = JSON.stringify({ date: scoreStoreDate, scores }, null, 2);
-    await fs.writeFile(temporaryPath, savedScores, 'utf8');
-    await fs.rename(temporaryPath, scoreStorePath);
-  };
-  userWriteQueue = userWriteQueue.then(writeScores, writeScores);
-  return userWriteQueue;
-}
-
-function persistUsers() {
-  const writeUsers = async () => {
-    await fs.mkdir(path.dirname(userStorePath), { recursive: true });
-    const temporaryPath = `${userStorePath}.${process.pid}.tmp`;
-    const savedUsers = users.map(({ email, password, tokenHash }) => ({
-      email,
-      password,
-      ...(tokenHash ? { tokenHash } : {}),
-    }));
-    await fs.writeFile(temporaryPath, JSON.stringify(savedUsers, null, 2), 'utf8');
-    await fs.rename(temporaryPath, userStorePath);
-  };
-  userWriteQueue = userWriteQueue.then(writeUsers, writeUsers);
-  return userWriteQueue;
-}
-
 async function findUser(field, value) {
   if (!value) {
     return null;
   }
-  return users.find((user) => user[field] === value) ?? null;
+  return usersCollection.findOne({ [field]: value });
 }
 
 function hashAuthToken(token) {
@@ -850,18 +835,12 @@ function setAuthCookie(res, token) {
   });
 }
 
-function updateScores(newScore) {
-  return [...scores, newScore]
-    .sort((first, second) => second.score - first.score)
-    .slice(0, 10);
-}
-
 function getPublicName(email) {
   const localPart = email.split('@')[0];
   return localPart.split('.')[0] || 'Player';
 }
 
-function getPublicScores() {
+function getPublicScores(scores = []) {
   return scores.map(({ name, score }) => ({
     name: getPublicName(name),
     score,
@@ -976,12 +955,34 @@ webSocketServer.on('connection', (webSocket) => {
   });
 });
 
-Promise.all([loadUsers(), loadScores(), loadDailyChallenges()]).then(() => {
-  validateDailyChallengeSchedule(dailyChallengeSchedule);
-  server.listen(port, () => {
-    console.log(`Listening on port ${port}`);
-  });
-}).catch((error) => {
-  console.error('Could not load saved user accounts:', error);
-  process.exitCode = 1;
-});
+async function startServer() {
+  try {
+    const database = await connectDatabase();
+    usersCollection = database.collection('users');
+    leaderboardsCollection = database.collection('leaderboards');
+    dailyChallengesCollection = database.collection('dailyChallenges');
+
+    await Promise.all([
+      usersCollection.createIndex({ email: 1 }, { unique: true }),
+      usersCollection.createIndex({ tokenHash: 1 }, { unique: true, sparse: true }),
+      leaderboardsCollection.createIndex({ date: 1 }, { unique: true }),
+      dailyChallengesCollection.createIndex({ date: 1 }, { unique: true }),
+    ]);
+    await migrateLegacyData();
+
+    validateDailyChallengeSchedule(dailyChallengeSchedule);
+    server.listen(port, () => {
+      console.log(`Listening on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Could not initialize MongoDB application data:', error);
+    try {
+      await closeDatabase();
+    } catch (closeError) {
+      console.error('Could not close the MongoDB client after startup failure:', closeError);
+    }
+    process.exitCode = 1;
+  }
+}
+
+startServer();
