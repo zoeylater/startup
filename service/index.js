@@ -412,12 +412,22 @@ async function createUser(email, password) {
   return { user, token };
 }
 
-async function migrateLegacyData() {
+async function migrateLegacyData(migrationsCollection) {
+  const migrationId = 'legacy-json-v1';
+  if (await migrationsCollection.findOne({ _id: migrationId })) {
+    return;
+  }
+
   await Promise.all([
     migrateLegacyUsers(),
     migrateLegacyScores(),
     migrateLegacyDailyChallenges(),
   ]);
+  await migrationsCollection.updateOne(
+    { _id: migrationId },
+    { $setOnInsert: { completedAt: new Date() } },
+    { upsert: true },
+  );
 }
 
 async function readLegacyData(fileName) {
@@ -968,7 +978,7 @@ async function startServer() {
       leaderboardsCollection.createIndex({ date: 1 }, { unique: true }),
       dailyChallengesCollection.createIndex({ date: 1 }, { unique: true }),
     ]);
-    await migrateLegacyData();
+    await migrateLegacyData(database.collection('migrations'));
 
     validateDailyChallengeSchedule(dailyChallengeSchedule);
     server.listen(port, () => {
