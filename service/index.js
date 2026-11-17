@@ -86,11 +86,11 @@ app.post('/api/auth/create', async (req, res) => {
   if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
     return res.status(400).send({ msg: 'Email and password are required' });
   }
-  if (await findUser('email', email)) {
-    return res.status(409).send({ msg: 'Existing user' });
-  }
-
   try {
+    if (await findUser('email', email)) {
+      return res.status(409).send({ msg: 'Existing user' });
+    }
+
     const { user, token } = await createUser(email, password);
     setAuthCookie(res, token);
     res.send({ email: user.email });
@@ -125,23 +125,23 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.delete('/api/auth/logout', async (req, res) => {
-  const token = req.cookies[authCookieName];
-  const user = typeof token === 'string'
-    ? await findUser('tokenHash', hashAuthToken(token))
-    : null;
-  if (user) {
-    try {
+  try {
+    const token = req.cookies[authCookieName];
+    const user = typeof token === 'string'
+      ? await findUser('tokenHash', hashAuthToken(token))
+      : null;
+    if (user) {
       await usersCollection.updateOne(
         { _id: user._id },
         { $unset: { tokenHash: '' } },
       );
-    } catch (error) {
-      console.error('Unable to revoke the user session:', error);
-      return res.status(500).send({ msg: 'Could not sign out. Please try again.' });
     }
+    res.clearCookie(authCookieName);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Unable to revoke the user session:', error);
+    res.status(500).send({ msg: 'Could not sign out. Please try again.' });
   }
-  res.clearCookie(authCookieName);
-  res.status(204).end();
 });
 
 app.get('/api/user/me', verifyAuth, (req, res) => {
@@ -211,9 +211,15 @@ app.get('/api/archives', verifyAuth, async (req, res) => {
     archive.date >= start && archive.date <= end
   ));
   const today = getMountainDateKey();
-  const savedChallenges = await dailyChallengesCollection.find({
-    date: { $gte: start, $lte: end },
-  }).toArray();
+  let savedChallenges;
+  try {
+    savedChallenges = await dailyChallengesCollection.find({
+      date: { $gte: start, $lte: end },
+    }).toArray();
+  } catch (error) {
+    console.error('Unable to load archived challenges:', error);
+    return res.status(503).send({ msg: 'Could not load the archive. Please try again.' });
+  }
   const scheduledArchives = [...savedChallenges, ...dailyChallengeSchedule].filter((challenge) => (
     challenge.date >= start && challenge.date <= end
   ));
@@ -343,6 +349,7 @@ app.post('/api/score', verifyAuth, async (req, res) => {
   const date = getMountainDateKey();
   const user = req.authenticatedUser;
   const newScore = { name: getPublicName(user.email), score };
+  let leaderboard;
   try {
     await leaderboardsCollection.updateOne(
       { date },
@@ -368,11 +375,11 @@ app.post('/api/score', verifyAuth, async (req, res) => {
       }],
       { upsert: true },
     );
+    leaderboard = await leaderboardsCollection.findOne({ date });
   } catch (error) {
     console.error('Unable to save the daily leaderboard:', error);
     return res.status(500).send({ msg: 'Could not save your score. Please try again.' });
   }
-  const leaderboard = await leaderboardsCollection.findOne({ date });
   const publicScores = getPublicScores(leaderboard?.scores);
   broadcastLeaderboard(publicScores);
   res.send(publicScores);
