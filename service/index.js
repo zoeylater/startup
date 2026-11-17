@@ -317,27 +317,6 @@ app.get('/api/location/reverse', verifyAuth, async (req, res, next) => {
   }
 });
 
-app.get('/api/music/deezer/search', async (req, res, next) => {
-  const query = req.query.q;
-  if (typeof query !== 'string' || !query.trim()) {
-    return res.status(400).send({ msg: 'A Deezer search query is required' });
-  }
-
-  try {
-    const deezerUrl = new URL('https://api.deezer.com/search');
-    deezerUrl.searchParams.set('q', query);
-    deezerUrl.searchParams.set('limit', '10');
-    const response = await fetch(deezerUrl);
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).send({ msg: 'Deezer search failed' });
-    }
-    res.send(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
 app.get('/api/scores', async (_req, res) => {
   try {
     const leaderboard = await leaderboardsCollection.findOne({ date: getMountainDateKey() });
