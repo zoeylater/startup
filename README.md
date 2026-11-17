@@ -70,7 +70,7 @@ I am going to use the required technologies in the following ways:
     - Submitting a guess
     - Calculating the score based on distance from the actual location of the song
 
-- **DB/Login** - User accounts, bcrypt password hashes, hashed login-session tokens, and the daily leaderboard are saved in local JSON files. They survive service restarts and deployments as long as the server's data directory remains on persistent storage; MongoDB is not yet configured. A separate prebuilt schedule provides one fixed challenge per `America/Denver` date from November 5 through November 30, 2026.
+- **DB/Login** - User accounts, bcrypt password hashes, hashed login-session tokens, and daily leaderboards are stored in MongoDB. On first startup, the service imports existing account, score, and generated-challenge JSON data into MongoDB. The prebuilt schedule remains static data in `service/daily-challenge-schedule.json` and provides one fixed challenge per `America/Denver` date from November 5 through November 30, 2026.
 
 - **WebSocket** - The React app connects to the existing Express service at `/ws`. After a score is saved, the service broadcasts a `leaderboard:update` event with the public leaderboard scores to authenticated clients.
 
@@ -134,7 +134,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 ## 🚀 React part 2: Reactivity deliverable
 
-Daily guesses and scores persist in browser storage, with each username's guess kept separate. The login form starts blank on each app load; the signed-in username and password are not saved as login credentials. Daily guesses and scores reset at the next local calendar day, including while the app stays open overnight. The leaderboard loads from the service and updates over WebSockets after saved score submissions; the activity feed includes simulated updates, map clicks place a guess pin and calculate distance-based scores, and the audio sample is capped at 30 seconds. The Results page links to an Archives calendar with an empty state until historical challenges are available. Sign-in uses the Express service's authenticated sessions. Track metadata and previews are provided by the service; leaderboard scores are saved in its JSON store.
+Daily guesses and scores persist in browser storage, with each username's guess kept separate. The login form starts blank on each app load; the signed-in username and password are not saved as login credentials. Daily guesses and scores reset at the next local calendar day, including while the app stays open overnight. The leaderboard loads from the service and updates over WebSockets after saved score submissions; the activity feed includes simulated updates, map clicks place a guess pin and calculate distance-based scores, and the audio sample is capped at 30 seconds. The Results page links to an Archives calendar with an empty state until historical challenges are available. Sign-in uses the Express service's authenticated sessions. Track metadata and previews are provided by the service; leaderboard scores are saved in MongoDB.
 
 - [X] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
 - [X] **All functionality implemented or mocked out** - Player progress persists locally, daily guesses reset each day, the service-backed leaderboard updates live over WebSockets, map guesses and distance scoring work, and previews are limited to 30 seconds.
@@ -158,8 +158,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [X] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [X] **Stores data in MongoDB** - I completed this part of the deliverable.
-- [X] **Stores credentials in MongoDB** - I completed this part of the deliverable.
+- [X] **Stores data in MongoDB** - Daily leaderboard scores and saved generated challenges are stored in MongoDB collections.
+- [X] **Stores credentials in MongoDB** - Account records are stored in MongoDB with bcrypt password hashes and hashed login-session tokens.
 
 ## 🚀 WebSocket deliverable
 
