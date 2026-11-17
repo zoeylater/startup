@@ -70,7 +70,7 @@ I am going to use the required technologies in the following ways:
     - Submitting a guess
     - Calculating the score based on distance from the actual location of the song
 
-- **DB/Login** - User accounts, bcrypt password hashes, hashed login-session tokens, and daily leaderboards are stored in MongoDB. On first startup, the service imports existing account, score, and generated-challenge JSON data into MongoDB. The prebuilt schedule remains static data in `service/daily-challenge-schedule.json` and provides one fixed challenge per `America/Denver` date from November 5 through November 30, 2026.
+- **DB/Login** - User accounts, bcrypt password hashes, hashed login-session tokens, and daily leaderboards are stored in MongoDB. Registration validates email addresses and accepts any non-empty password up to bcrypt's 72-byte limit. On first startup, the service imports existing account, score, and generated-challenge JSON data into MongoDB. The prebuilt schedule remains static data in `service/daily-challenge-schedule.json` and provides one fixed challenge per `America/Denver` date from November 5 through November 30, 2026.
 
 - **WebSocket** - The React app connects to the existing Express service at `/ws`. After a score is saved, the service broadcasts a `leaderboard:update` event with the public leaderboard scores to authenticated clients.
 

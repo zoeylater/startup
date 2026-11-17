@@ -8,6 +8,7 @@ const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { closeDatabase, connectDatabase } = require('./database');
+const { validateCredentials } = require('./credentialValidation');
 const {
   createUsedChallengeIdentifiers,
   isUnusedDeezerCandidate,
@@ -82,16 +83,19 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.post('/api/auth/create', async (req, res) => {
-  const { email, password } = req.body;
-  if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
-    return res.status(400).send({ msg: 'Email and password are required' });
+  const { email, password } = req.body || {};
+  const validationError = validateCredentials(email, password);
+  if (validationError) {
+    return res.status(400).send({ msg: validationError });
   }
+  const normalizedEmail = email.trim();
+
   try {
-    if (await findUser('email', email)) {
+    if (await findUser('email', normalizedEmail)) {
       return res.status(409).send({ msg: 'Existing user' });
     }
 
-    const { user, token } = await createUser(email, password);
+    const { user, token } = await createUser(normalizedEmail, password);
     setAuthCookie(res, token);
     res.send({ email: user.email });
   } catch (error) {
@@ -105,9 +109,13 @@ app.post('/api/auth/create', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await findUser('email', email);
-    if (!user || typeof password !== 'string' || !(await bcrypt.compare(password, user.password))) {
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
+      return res.status(401).send({ msg: 'Unauthorized' });
+    }
+
+    const user = await findUser('email', email.trim());
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).send({ msg: 'Unauthorized' });
     }
 
